@@ -1,24 +1,24 @@
-# Sample data (user content)
+# Input/output data
 html/
 xml/
+output/
 
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-.venv/
-venv/
-env/
 *.egg-info/
 .eggs/
 dist/
 build/
+*.egg
 
-# IDE / OS
+# Env
+.venv/
+venv/
+.env
+
+# IDE
 .idea/
 .vscode/
-.DS_Store
 *.swp
 *.swo
