@@ -1,0 +1,22 @@
+{
+  "title": "Multimodality medical image fusion using directional total variation based linear spectral clustering in NSCT domain",
+  "doi": "10.1038/s41598-025-26916-y",
+  "abstract": "In medical science, there is a challenge to find out critical information from the medical images by low vision disability medical experts. As a solution, we can enhance the medical images by fusing different modality images viz. CT-MRI which can be more informative. This article presents a new multi-modal medical image fusion architecture in non-subsampled contourlet transform (NSCT) domain which is shift-invariant over noisy medical images. Initially noise from medical images is reduced using a convolution neural network (CNN) approach. Furthermore, NSCT is applied in denoised source multi-modal images to obtain approximation and detailed parts. In approximation parts of both input images, the fusion operation is performed using Direction Total Variation enabled linear spectral clustering. Simlarly in detailed parts of both input images fusion operation is performed using sum modified laplacian (SML) approaches. By performing inverse operation on both modified approximation and detailed parts, final fused image is obtained. From qualitative and quantitative result analysis, it can be concluded that the proposed method is an essential means of ensuring that multi-modality images provide more reliable analytical results to analyze experimental outcomes and comparative research.",
+  "sections": [
+    {
+      "title": "Abstract",
+      "level": 1,
+      "content": "In medical science, there is a challenge to find out critical information from the medical images by low vision disability medical experts. As a solution, we can enhance the medical images by fusing different modality images viz. CT-MRI which can be more informative. This article presents a new multi-modal medical image fusion architecture in non-subsampled contourlet transform (NSCT) domain which is shift-invariant over noisy medical images. Initially noise from medical images is reduced using a convolution neural network (CNN) approach. Furthermore, NSCT is applied in denoised source multi-modal images to obtain approximation and detailed parts. In approximation parts of both input images, the fusion operation is performed using Direction Total Variation enabled linear spectral clustering. Simlarly in detailed parts of both input images fusion operation is performed using sum modified laplacian (SML) approaches. By performing inverse operation on both modified approximation and detailed parts, final fused image is obtained. From qualitative and quantitative result analysis, it can be concluded that the proposed method is an essential means of ensuring that multi-modality images provide more reliable analytical results to analyze experimental outcomes and comparative research.",
+      "children": []
+    },
+    {
+      "title": "Data availability",
+      "level": 1,
+      "content": "The dataset analyzed during the current study is available from the corresponding author (i.e. Manoj Diwakar) on reasonable request.",
+      "children": []
+    }
+  ],
+  "figures": [],
+  "tables": [],
+  "supplementary": []
+}
