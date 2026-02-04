@@ -1,0 +1,39 @@
+---
+description: CLI conventions using Click
+globs: "**/cli.py"
+alwaysApply: false
+---
+
+# CLI Conventions
+
+## Framework
+- Use Click library for CLI implementation
+- Group related commands under command groups
+
+## Command Structure
+```python
+import click
+
+@click.command()
+@click.argument("input_file", type=click.Path(exists=True))
+@click.option("--output", "-o", type=click.Path(), help="Output file path")
+@click.option("--format", "-f", type=click.Choice(["json", "markdown"]), default="json")
+def convert(input_file: str, output: str, format: str) -> None:
+    """Convert HTML/XML article to JSON or Markdown."""
+    pass
+```
+
+## Input/Output
+- Accept input from file path or stdin
+- Output to file path or stdout
+- Auto-detect input format from file extension when possible
+
+## Error Handling
+- Use `click.echo()` for normal output
+- Use `click.secho(..., fg="red")` for error messages
+- Exit with appropriate codes: 0 (success), 1 (error), 2 (usage error)
+
+## Progress Feedback
+- Use `click.progressbar()` for batch operations
+- Provide `--verbose` flag for detailed output
+- Provide `--quiet` flag to suppress non-error output

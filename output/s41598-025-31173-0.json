@@ -1,0 +1,126 @@
+{
+  "title": "Multimodal road perception with illumination adaptation in autonomous vehicles",
+  "doi": "10.1038/s41598-025-31173-0",
+  "journal": "Scientific Reports",
+  "publication_date": null,
+  "keywords": [],
+  "authors": [
+    {
+      "name": "Wei, Jinri",
+      "affiliations": [
+        1
+      ]
+    },
+    {
+      "name": "Mo, Yi",
+      "affiliations": [
+        1
+      ]
+    },
+    {
+      "name": "Su, Caiyu",
+      "affiliations": [
+        1
+      ]
+    },
+    {
+      "name": "Li, Xueping",
+      "affiliations": [
+        1
+      ]
+    }
+  ],
+  "affiliations": [
+    {
+      "id": 1,
+      "text": "Guangxi Vocational & Technical Institute of Industry, Nanning, China"
+    }
+  ],
+  "abstract": "The development of autonomous driving technology is reshaping transportation methods. However, the significant decline in perception capabilities under low-light conditions such as rain, fog, and nighttime remains a key bottleneck restricting its widespread application. This paper proposes SafeDrive-Fusion, a novel illumination-adaptive multimodal perception framework that introduces dynamic cross-modal attention fusion and safety-critical region prioritization for robust road passability assessment in autonomous driving. Unlike existing static fusion approaches, this framework addresses the problem of significantly reduced perception capabilities in dim environments through an innovative illumination-adaptive weighting mechanism that dynamically integrates visual and radar information while prioritizing safety-critical road regions. Experimental results show that SafeDrive-Fusion maintains 87.5% accuracy even under extremely low-light conditions, with a performance degradation of only 6.1%, far superior to existing methods’ degradation range of 16.6%-34.8%. Particularly in safety-critical “hazardous situation” recognition, the system achieves an F1 score of 0.82, which is 0.40 higher than baseline methods. Through its illumination-adaptive modal weight dynamic adjustment mechanism, the system can automatically adjust its dependence on different modalities according to environmental conditions. As illumination decreases from normal to extremely low, the radar modality weight increases from 25% to 62%. Meanwhile, SafeDrive-Fusion features a low computational latency of 45ms, meeting the real-time requirements of autonomous driving.",
+  "sections": [
+    {
+      "title": "Abstract",
+      "level": 1,
+      "content": "The development of autonomous driving technology is reshaping transportation methods. However, the significant decline in perception capabilities under low-light conditions such as rain, fog, and nighttime remains a key bottleneck restricting its widespread application. This paper proposes SafeDrive-Fusion, a novel illumination-adaptive multimodal perception framework that introduces dynamic cross-modal attention fusion and safety-critical region prioritization for robust road passability assessment in autonomous driving. Unlike existing static fusion approaches, this framework addresses the problem of significantly reduced perception capabilities in dim environments through an innovative illumination-adaptive weighting mechanism that dynamically integrates visual and radar information while prioritizing safety-critical road regions. Experimental results show that SafeDrive-Fusion maintains 87.5% accuracy even under extremely low-light conditions, with a performance degradation of only 6.1%, far superior to existing methods’ degradation range of 16.6%-34.8%. Particularly in safety-critical “hazardous situation” recognition, the system achieves an F1 score of 0.82, which is 0.40 higher than baseline methods. Through its illumination-adaptive modal weight dynamic adjustment mechanism, the system can automatically adjust its dependence on different modalities according to environmental conditions. As illumination decreases from normal to extremely low, the radar modality weight increases from 25% to 62%. Meanwhile, SafeDrive-Fusion features a low computational latency of 45ms, meeting the real-time requirements of autonomous driving.",
+      "children": []
+    },
+    {
+      "title": "Data availability",
+      "level": 1,
+      "content": "The image data that support the findings of this study have been obtained from the KITTI-COCO dataset repository with the primary access link [https://www.kaggle.com/datasets/nhphucqt/kitti-coco?select=train2017](https://www.kaggle.com/datasets/nhphucqt/kitti-coco?select=train2017) .",
+      "children": []
+    },
+    {
+      "title": "Author information",
+      "level": 1,
+      "content": "",
+      "children": [
+        {
+          "title": "Authors and Affiliations",
+          "level": 2,
+          "content": "Authors Jinri Wei [View author publications](/search?author=Jinri%20Wei) Search author on: [PubMed](https://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=Jinri%20Wei) [Google Scholar](https://scholar.google.co.uk/scholar?as_q=&num=10&btnG=Search+Scholar&as_epq=&as_oq=&as_eq=&as_occt=any&as_sauthors=%22Jinri%20Wei%22&as_publication=&as_ylo=&as_yhi=&as_allsubj=all&hl=en) Yi Mo [View author publications](/search?author=Yi%20Mo) Search author on: [PubMed](https://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=Yi%20Mo) [Google Scholar](https://scholar.google.co.uk/scholar?as_q=&num=10&btnG=Search+Scholar&as_epq=&as_oq=&as_eq=&as_occt=any&as_sauthors=%22Yi%20Mo%22&as_publication=&as_ylo=&as_yhi=&as_allsubj=all&hl=en) Caiyu Su [View author publications](/search?author=Caiyu%20Su) Search author on: [PubMed](https://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=Caiyu%20Su) [Google Scholar](https://scholar.google.co.uk/scholar?as_q=&num=10&btnG=Search+Scholar&as_epq=&as_oq=&as_eq=&as_occt=any&as_sauthors=%22Caiyu%20Su%22&as_publication=&as_ylo=&as_yhi=&as_allsubj=all&hl=en) Xueping Li [View author publications](/search?author=Xueping%20Li) Search author on: [PubMed](https://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=Xueping%20Li) [Google Scholar](https://scholar.google.co.uk/scholar?as_q=&num=10&btnG=Search+Scholar&as_epq=&as_oq=&as_eq=&as_occt=any&as_sauthors=%22Xueping%20Li%22&as_publication=&as_ylo=&as_yhi=&as_allsubj=all&hl=en)",
+          "children": []
+        },
+        {
+          "title": "Contributions",
+          "level": 2,
+          "content": "J.W. conceived the experiment(s), J.W. and Y.M. conducted the experiment(s), C.S. and X.L. analysed the results. All authors reviewed the manuscript.",
+          "children": []
+        },
+        {
+          "title": "Corresponding author",
+          "level": 2,
+          "content": "Correspondence to [Jinri Wei](mailto:Weijinri_1133@163.com) .",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Ethics declarations",
+      "level": 1,
+      "content": "",
+      "children": [
+        {
+          "title": "Competing interests",
+          "level": 2,
+          "content": "The authors declare no competing interests.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Additional information",
+      "level": 1,
+      "content": "",
+      "children": [
+        {
+          "title": "Publisher’s note",
+          "level": 2,
+          "content": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Supplementary Information",
+      "level": 1,
+      "content": "[Supplementary Information.](https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-025-31173-0/MediaObjects/41598_2025_31173_MOESM1_ESM.pdf)",
+      "children": []
+    },
+    {
+      "title": "Rights and permissions",
+      "level": 1,
+      "content": "Open Access This article is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License, which permits any non-commercial use, sharing, distribution and reproduction in any medium or format, as long as you give appropriate credit to the original author(s) and the source, provide a link to the Creative Commons licence, and indicate if you modified the licensed material. You do not have permission under this licence to share adapted material derived from this article or parts of it. The images or other third party material in this article are included in the article’s Creative Commons licence, unless indicated otherwise in a credit line to the material. If material is not included in the article’s Creative Commons licence and your intended use is not permitted by statutory regulation or exceeds the permitted use, you will need to obtain permission directly from the copyright holder. To view a copy of this licence, visit [http://creativecommons.org/licenses/by-nc-nd/4.0/](http://creativecommons.org/licenses/by-nc-nd/4.0/) .\n\n[Reprints and permissions](https://s100.copyright.com/AppDispatchServlet?title=Multimodal%20road%20perception%20with%20illumination%20adaptation%20in%20autonomous%20vehicles&author=Jinri%20Wei%20et%20al&contentID=10.1038%2Fs41598-025-31173-0&copyright=The%20Author%28s%29&publication=2045-2322&publicationDate=2026-02-04&publisherName=SpringerNature&orderBeanReset=true&oa=CC%20BY-NC-ND)",
+      "children": []
+    },
+    {
+      "title": "About this article",
+      "level": 1,
+      "content": "[https://crossmark.crossref.org/dialog/?doi=10.1038/s41598-025-31173-0](https://crossmark.crossref.org/dialog/?doi=10.1038/s41598-025-31173-0) Cite this article Wei, J., Mo, Y., Su, C. et al. Multimodal road perception with illumination adaptation in autonomous vehicles. Sci Rep (2026). https://doi.org/10.1038/s41598-025-31173-0 [Download citation](https://citation-needed.springer.com/v2/references/10.1038/s41598-025-31173-0?format=refman&flavour=citation) Received : 08 April 2025 Accepted : 01 December 2025 Published : 04 February 2026 DOI : https://doi.org/10.1038/s41598-025-31173-0 Share this article Anyone you share the following link with will be able to read this content: Get shareable link Sorry, a shareable link is not currently available for this article. Copy shareable link to clipboard Provided by the Springer Nature SharedIt content-sharing initiative",
+      "children": []
+    }
+  ],
+  "figures": [],
+  "tables": [],
+  "supplementary": []
+}
