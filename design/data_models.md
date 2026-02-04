@@ -28,8 +28,8 @@ Sections are recursive to support arbitrary nesting depths (Section -> Subsectio
 ```python
 class Section(BaseModel):
     title: str
-    level: int  # 1=section, 2=subsection, 3=subsubsection
-    content: str  # Text content before any subsections
+    level: int = Field(ge=1, le=3, description="1=section, 2=subsection, 3=subsubsection")
+    content: str = ""
     children: List['Section'] = Field(default_factory=list)
 ```
 

@@ -46,3 +46,4 @@ Targeted at PubMed Central JATS XML format.
 - **Math Conversion**: Both parsers use `mathml_element_to_latex` to convert MathML blocks into LaTeX strings.
 - **Cleaning**: Removing citations (e.g., `[1]`, `(Smith et al., 2020)`) and reference lists.
 - **Encoding**: Ensuring UTF-8 handling for special characters.
+- **Supplementary Materials**: Currently not extracted per user request (returns empty list).

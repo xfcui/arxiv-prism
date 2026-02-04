@@ -25,12 +25,12 @@ Serializes the `Article` model directly to JSON.
 Generates a human-readable Markdown file.
 
 ### Formatting Rules
-- **Header**: Includes title, authors, DOI, and journal info.
+- **Header**: Includes title and DOI.
 - **Sections**: Uses `#`, `##`, `###` based on section level.
 - **Figures**: Rendered as a block with label and caption, plus an `(image omitted)` note.
 - **Tables**: Converted to standard Markdown table syntax.
 - **Math**: Preserved as LaTeX `$inline$` or `$$display$$`.
-- **Supplementary**: Listed at the end of the document.
+- **Supplementary**: Listed at the end of the document if present.
 
 ### Example Figure Output
 ```markdown

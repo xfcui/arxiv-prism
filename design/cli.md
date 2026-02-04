@@ -13,20 +13,24 @@ python -m converter convert <input_file> [OPTIONS]
 
 **Options:**
 - `-o, --output`: Path to output file.
-- `-f, --format`: Output format (`json` or `markdown`). Auto-detected if omitted.
+- `-f, --format`: Output format (`json` or `markdown`). Default: `json`.
+- `--input-format`: Input format (`html`, `xml`, or `auto`). Default: `auto`.
 - `-v, --verbose`: Increase logging verbosity.
+- `-q, --quiet`: Suppress non-error output.
 
 ### `batch`
 Converts all files in a directory.
 
 ```bash
-python -m converter batch <input_dir> [OPTIONS]
+python -m converter batch <input_dir> --output <output_dir> [OPTIONS]
 ```
 
 **Options:**
-- `-o, --output-dir`: Directory to save converted files.
-- `-f, --format`: Output format.
-- `--recursive`: Search subdirectories for input files.
+- `-o, --output`: Directory to save converted files.
+- `-f, --format`: Output format (`json` or `markdown`). Default: `markdown`.
+- `--input-format`: Input format (`html`, `xml`, or `auto`). Default: `auto`.
+- `-v, --verbose`: Increase logging verbosity.
+- `-q, --quiet`: Suppress non-error output.
 
 ## Error Handling
 - **Missing Required Fields**: Log a warning and use placeholders (e.g., "Unknown Title").
