@@ -3,20 +3,6 @@
 from pydantic import BaseModel, Field
 
 
-class Author(BaseModel):
-    """Author with optional affiliation indices."""
-
-    name: str
-    affiliations: list[int] = Field(default_factory=list)
-
-
-class Affiliation(BaseModel):
-    """Institutional affiliation."""
-
-    id: int
-    text: str
-
-
 class Section(BaseModel):
     """Recursive section (section, subsection, subsubsection)."""
 
@@ -62,10 +48,6 @@ class Article(BaseModel):
     doi: str | None = None
     journal: str | None = None
     publication_date: str | None = None
-    keywords: list[str] = Field(default_factory=list)
-
-    authors: list[Author] = Field(default_factory=list)
-    affiliations: list[Affiliation] = Field(default_factory=list)
 
     abstract: str = ""
     sections: list[Section] = Field(default_factory=list)
