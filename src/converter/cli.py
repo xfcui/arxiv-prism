@@ -75,13 +75,23 @@ def cli(ctx: click.Context, verbose: bool, quiet: bool) -> None:
     default="auto",
     help="Input format (default: auto from extension).",
 )
+@click.option(
+    "--skip-exist",
+    is_flag=True,
+    help="Skip processing if output file already exists.",
+)
 def convert(
     input_file: Path,
     output: Path | None,
     output_format: str,
     input_format: str,
+    skip_exist: bool,
 ) -> None:
     """Convert a single article file."""
+    if skip_exist and output is not None and output.exists():
+        click.echo(f"Skipping {input_file.name} (output exists: {output})")
+        return
+    
     fmt = input_format
     if fmt == "auto":
         fmt = _detect_format(input_file)
@@ -131,11 +141,17 @@ def convert(
     default="auto",
     help="Input format (default: auto from extension).",
 )
+@click.option(
+    "--skip-exist",
+    is_flag=True,
+    help="Skip processing if output file already exists.",
+)
 def batch(
     input_dir: Path,
     output: Path,
     output_format: str,
     input_format: str,
+    skip_exist: bool,
 ) -> None:
     """Convert all article files in a directory."""
     formatter = _get_formatter(output_format)
@@ -146,9 +162,17 @@ def batch(
         click.echo("No files in directory.")
         return
     ok = 0
+    skipped = 0
     for path in sorted(files):
         if not path.is_file():
             continue
+        
+        out_path = output / (path.stem + ext)
+        if skip_exist and out_path.exists():
+            click.echo(f"Skipping {path.name} (output exists: {out_path.name})")
+            skipped += 1
+            continue
+        
         fmt = input_format
         if fmt == "auto":
             fmt = _detect_format(path)
@@ -160,14 +184,17 @@ def batch(
             content = path.read_text(encoding="utf-8", errors="replace")
             article = parser.parse(content)
             out_str = formatter.format(article)
-            out_path = output / (path.stem + ext)
             out_path.write_text(out_str, encoding="utf-8")
             ok += 1
             click.echo(f"Converted {path.name} -> {out_path.name}")
         except Exception as e:
             logger.warning("Failed %s: %s", path.name, e)
             click.secho(f"Failed {path.name}: {e}", fg="red")
-    click.echo(f"Done. {ok}/{len(files)} files converted.")
+    
+    summary = f"Done. {ok}/{len(files)} files converted."
+    if skipped:
+        summary += f" {skipped} skipped (already exist)."
+    click.echo(summary)
 
 
 def main() -> None:

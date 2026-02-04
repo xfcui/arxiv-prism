@@ -14,9 +14,10 @@ def strip_citations(text: str) -> str:
     # Remove [...]. e.g. [1], [1, 2], [1-3]
     text = re.sub(r"\[\s*\d+(?:\s*[,\-]\s*\d+)*\s*\]", "", text)
     
-    # Remove empty citation artifacts with surrounding spaces
+    # Remove empty citation artifacts - more comprehensive pattern
     # Patterns: (–), (, ), (,), ( ), etc., including leading/trailing spaces
-    text = re.sub(r"\s*\(\s*[–\-,;]*\s*\)\s*", " ", text)
+    # This also catches cases where citations leave behind only punctuation
+    text = re.sub(r"\s*\(\s*[–\-,;\s]*\)\s*", " ", text)
     
     # Remove standalone dashes or commas that were part of citations
     # Match patterns like " – " or " , " when surrounded by spaces or punctuation

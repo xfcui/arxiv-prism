@@ -28,7 +28,7 @@ def _mathml_to_latex_el(el: ET.Element) -> str:
         return _text(el).strip()
     if tag == "mo":
         op = _text(el).strip()
-        if op in ("+", "-", "=", "<", ">", "*", "/"):
+        if op in ("+", "-", "=", "<", ">", "*", "/", "(", ")", "[", "]", "{", "}", "|", ",", ".", ":", ";"):
             return op
         if op == "−":
             return "-"
@@ -36,6 +36,40 @@ def _mathml_to_latex_el(el: ET.Element) -> str:
             return "\\times "
         if op == "÷":
             return "\\div "
+        if op == "≤" or op == "⩽":
+            return "\\leq "
+        if op == "≥" or op == "⩾":
+            return "\\geq "
+        if op == "≠":
+            return "\\neq "
+        if op == "±":
+            return "\\pm "
+        if op == "∓":
+            return "\\mp "
+        if op == "∈":
+            return "\\in "
+        if op == "∉":
+            return "\\notin "
+        if op == "⊂":
+            return "\\subset "
+        if op == "⊃":
+            return "\\supset "
+        if op == "⊆":
+            return "\\subseteq "
+        if op == "⊇":
+            return "\\supseteq "
+        if op == "∪":
+            return "\\cup "
+        if op == "∩":
+            return "\\cap "
+        if op == "∞":
+            return "\\infty "
+        if op == "∑":
+            return "\\sum "
+        if op == "∏":
+            return "\\prod "
+        if op == "∫":
+            return "\\int "
         return op
     if tag == "msup":
         children = list(el)
@@ -77,13 +111,19 @@ def _mathml_to_latex_el(el: ET.Element) -> str:
         sup = _mathml_to_latex_el(children[2]) if len(children) > 2 else ""
         return f"{{{base}}}_{{{sub}}}^{{{sup}}}"
     if tag == "mtable":
-        rows = el.findall(".//mtr")
+        # Find mtr rows by iterating and checking stripped tag (handles namespaces)
+        rows = [child for child in el if child.tag.split("}")[-1] == "mtr"]
         if not rows:
             return "[table]"
-        return "\\begin{matrix}" + " \\\\ ".join(
-            " & ".join(_mathml_to_latex_el(c) for c in row.findall("mtd"))
-            for row in rows
-        ) + "\\end{matrix}"
+        # Process each row, finding mtd cells similarly
+        row_parts = []
+        for row in rows:
+            cells = [child for child in row if child.tag.split("}")[-1] == "mtd"]
+            if cells:
+                row_parts.append(" & ".join(_mathml_to_latex_el(c) for c in cells))
+        if not row_parts:
+            return "[table]"
+        return "\\begin{matrix}" + " \\\\ ".join(row_parts) + "\\end{matrix}"
     if tag in ("mtr", "mtd"):
         return "".join(_mathml_to_latex_el(c) for c in el)
     if tag == "mfenced":
@@ -97,6 +137,26 @@ def _mathml_to_latex_el(el: ET.Element) -> str:
         und = _mathml_to_latex_el(children[1]) if len(children) > 1 else ""
         ov = _mathml_to_latex_el(children[2]) if len(children) > 2 else ""
         return f"\\underset{{{und}}}{{\\overset{{{ov}}}{{{base}}}}}"
+    if tag == "mtext":
+        # Extract text content directly for text in formulas
+        text = _text(el).strip()
+        if text:
+            return f"\\text{{{text}}}"
+        return ""
+    if tag == "mspace":
+        # Handle spacing - map width attribute to LaTeX spacing commands
+        width = el.get("width", "")
+        if "thin" in width or width in ("0.167em", "3pt"):
+            return "\\,"
+        if "medium" in width or width in ("0.222em", "4pt"):
+            return "\\:"
+        if "thick" in width or width in ("0.278em", "5pt"):
+            return "\\;"
+        if "1em" in width:
+            return "\\quad "
+        if "2em" in width:
+            return "\\qquad "
+        return " "  # Default spacing
     return "".join(_mathml_to_latex_el(c) for c in el)
 
 
