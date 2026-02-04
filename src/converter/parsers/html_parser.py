@@ -8,9 +8,9 @@ from converter.models import (
     Article,
     Figure,
     Section,
-    Supplementary,
     Table,
 )
+from converter.models import Supplementary  # noqa: F401 - used in return type
 from converter.parsers.base import BaseParser
 from converter.text_utils import strip_citations
 
@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 # Section titles to skip (reference list, etc.)
 SKIP_SECTION_TITLES = {"References", "References "}
+
+# Section titles that mark the end of main content (stop processing at these)
+END_SECTION_TITLES = {"Acknowledgements", "Acknowledgments"}
 
 
 def _element_text(el) -> str:
@@ -124,6 +127,9 @@ class HTMLParser(BaseParser):
             title_attr = section_el.get("data-title", "").strip()
             if title_attr in SKIP_SECTION_TITLES:
                 continue
+            # Stop processing at end section titles (Acknowledgements, etc.)
+            if title_attr in END_SECTION_TITLES:
+                break
             h2 = section_el.select_one("h2.c-article-section__title")
             title = _element_text(h2) if h2 else title_attr
             content_div = section_el.select_one(".c-article-section__content")
@@ -258,16 +264,5 @@ class HTMLParser(BaseParser):
         return tables
 
     def _get_supplementary(self, soup: BeautifulSoup) -> list[Supplementary]:
-        supp: list[Supplementary] = []
-        section = soup.find("section", attrs={"data-title": "Supplementary information"})
-        if not section:
-            return supp
-        content = section.select_one(".c-article-section__content")
-        if not content:
-            return supp
-        for a in content.find_all("a", href=True):
-            text = _element_text(a)
-            href = a.get("href", "")
-            if text and ("supplementary" in href.lower() or "supp" in text.lower()):
-                supp.append(Supplementary(label=text[:80], description=href))
-        return supp
+        # Supplementary materials are not loaded per user request
+        return []

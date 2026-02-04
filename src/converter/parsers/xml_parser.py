@@ -8,9 +8,9 @@ from converter.models import (
     Article,
     Figure,
     Section,
-    Supplementary,
     Table,
 )
+from converter.models import Supplementary  # noqa: F401 - used in return type
 from converter.parsers.base import BaseParser
 from converter.text_utils import strip_citations
 from converter.math_utils import mathml_element_to_latex
@@ -235,14 +235,5 @@ class XMLParser(BaseParser):
         return tables
 
     def _get_supplementary(self, back: ET.Element) -> list[Supplementary]:
-        supp: list[Supplementary] = []
-        for sm in back.iter("supplementary-material"):
-            cap_el = sm.find("caption")
-            desc = _norm(_text(cap_el)) if cap_el is not None else ""
-            for media in sm.findall(".//media"):
-                href = media.get("{http://www.w3.org/1999/xlink}href") or media.get("xlink:href")
-                if href:
-                    supp.append(Supplementary(label=href.split("/")[-1][:80], description=desc or href))
-            if not supp and desc:
-                supp.append(Supplementary(label="Supplementary Materials", description=desc))
-        return supp
+        # Supplementary materials are not loaded per user request
+        return []
