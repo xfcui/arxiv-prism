@@ -5,9 +5,7 @@ import re
 from xml.etree import ElementTree as ET
 
 from converter.models import (
-    Affiliation,
     Article,
-    Author,
     Figure,
     Section,
     Supplementary,
@@ -56,66 +54,42 @@ def _elems(root: ET.Element | None, tag: str) -> list:
     return list(root.iter(tag))
 
 
-def _get_pub_date(article_meta: ET.Element | None) -> str | None:
-    """Format pub-date as YYYY-MM-DD."""
-    pub = article_meta.find(".//pub-date[@publication-format='electronic']") or article_meta.find(
-        ".//pub-date"
-    )
-    if pub is None:
-        return None
-    y = pub.find("year")
-    m = pub.find("month")
-    d = pub.find("day")
-    if y is not None and y.text:
-        parts = [y.text.strip().zfill(4)]
-        parts.append(m.text.strip().zfill(2) if m is not None and m.text else "01")
-        parts.append(d.text.strip().zfill(2) if d is not None and d.text else "01")
-        return "-".join(parts)
-    return None
-
-
-def _aff_id_from_string(s: str) -> int | None:
-    """Parse 'aff1' -> 1."""
-    m = re.match(r"aff(\d+)", s, re.I)
-    return int(m.group(1)) if m else None
-
-
 def _extract_paragraph_text(p_el: ET.Element) -> str:
     """Extract text from paragraph, strip citations (xref ref-type=bibr), convert ext-link to markdown."""
-    parts: list[str] = []
-    for node in p_el.iter():
-        if node.tag == "xref" and node.get("ref-type") == "bibr":
-            continue
-        if node.tag == "ext-link":
-            href = node.get("{http://www.w3.org/1999/xlink}href") or node.get("xlink:href") or ""
-            text = _norm(_text(node))
-            if href and not href.startswith("#"):
-                parts.append(f"[{text or href}]({href})")
-            else:
-                parts.append(text)
-            continue
-        if node.tag in ("p", "bold", "italic", "sub", "sup", "underline", "named-content"):
-            if node.text:
-                parts.append(node.text)
-            for child in node:
-                if child.tag == "xref" and child.get("ref-type") == "bibr":
-                    continue
-                if child.tag == "ext-link":
-                    href = child.get("{http://www.w3.org/1999/xlink}href") or ""
-                    text = _norm(_text(child))
-                    parts.append(f"[{text or href}]({href})")
-                else:
-                    parts.append(_text(child))
-                if child.tail:
-                    parts.append(child.tail)
-            if node.tail:
-                parts.append(node.tail)
-            continue
+    
+    def _process_node(node: ET.Element) -> str:
+        """Recursively process a node and its children, skipping citations."""
+        parts: list[str] = []
+        
+        # Add the node's direct text
         if node.text:
             parts.append(node.text)
-        if node.tail and node.tag not in ("p", "xref", "ext-link"):
-            parts.append(node.tail)
-    text = _norm("".join(parts))
+        
+        # Process children
+        for child in node:
+            if child.tag == "xref" and child.get("ref-type") == "bibr":
+                # Skip citation content but keep the tail text
+                if child.tail:
+                    parts.append(child.tail)
+            elif child.tag == "ext-link":
+                href = child.get("{http://www.w3.org/1999/xlink}href") or child.get("xlink:href") or ""
+                text = _norm(_text(child))
+                if href and not href.startswith("#"):
+                    parts.append(f"[{text or href}]({href})")
+                else:
+                    parts.append(text)
+                if child.tail:
+                    parts.append(child.tail)
+            else:
+                # Recursively process other elements
+                parts.append(_process_node(child))
+                if child.tail:
+                    parts.append(child.tail)
+        
+        return "".join(parts)
+    
+    text = _process_node(p_el)
+    text = _norm(text)
     return strip_citations(text)
 
 
@@ -184,15 +158,6 @@ class XMLParser(BaseParser):
                 doi = aid.text.strip()
                 break
 
-        journal_el = article.find(".//journal-title")
-        journal = _norm(_text(journal_el)) if journal_el is not None else None
-        publication_date = _get_pub_date(article_meta)
-        keywords = [
-            _norm(_text(k))
-            for k in _elems(article_meta or article, "kwd")
-            if _norm(_text(k))
-        ]
-        authors, affiliations = self._get_authors_affiliations(article_meta, article)
         abstract = self._get_abstract(article_meta)
         sections = self._get_sections(body) if body is not None else []
         figures = self._get_figures(article)
@@ -202,63 +167,12 @@ class XMLParser(BaseParser):
         return Article(
             title=title,
             doi=doi,
-            journal=journal,
-            publication_date=publication_date,
-            keywords=keywords,
-            authors=authors,
-            affiliations=affiliations,
             abstract=abstract,
             sections=sections,
             figures=figures,
             tables=tables,
             supplementary=supplementary,
         )
-
-    def _get_authors_affiliations(
-        self, article_meta: ET.Element | None, article: ET.Element
-    ) -> tuple[list[Author], list[Affiliation]]:
-        affiliations: list[Affiliation] = []
-        contrib_group = None
-        if article_meta is not None:
-            contrib_group = article_meta.find("contrib-group")
-        if contrib_group is None:
-            contrib_group = article.find(".//contrib-group")
-        if contrib_group is None:
-            return [], []
-        for aff_el in contrib_group.iter("aff"):
-            aid = _aff_id_from_string(aff_el.get("id") or "")
-            if aid is None:
-                continue
-            label_el = aff_el.find("label")
-            rest = []
-            for n in aff_el:
-                if n.tag != "label":
-                    rest.append(_text(n))
-            text = _norm("".join(rest))
-            if text and not any(a.id == aid for a in affiliations):
-                affiliations.append(Affiliation(id=aid, text=text))
-        affiliations.sort(key=lambda x: x.id)
-        authors = []
-        for contrib in contrib_group.findall("contrib"):
-            if contrib.get("contrib-type") != "author":
-                continue
-            name_el = contrib.find("name")
-            if name_el is None:
-                continue
-            given = _norm(_text(name_el.find("given-names")))
-            surname = _norm(_text(name_el.find("surname")))
-            name = f"{surname}, {given}".strip(", ") or (given or surname)
-            if not name:
-                continue
-            aff_indices = []
-            for xref in contrib.findall("xref"):
-                if xref.get("ref-type") == "aff":
-                    rid = xref.get("rid") or ""
-                    aid = _aff_id_from_string(rid)
-                    if aid is not None and aid not in aff_indices:
-                        aff_indices.append(aid)
-            authors.append(Author(name=name, affiliations=aff_indices))
-        return authors, affiliations
 
     def _get_abstract(self, article_meta: ET.Element | None) -> str:
         if article_meta is None:

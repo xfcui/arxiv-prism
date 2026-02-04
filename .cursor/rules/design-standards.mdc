@@ -1,0 +1,28 @@
+---
+description: Design documentation standards and workflow
+globs: design/**
+alwaysApply: false
+---
+
+# Design Documentation
+
+## Before Coding
+
+Read relevant design docs before implementing features:
+- Understand the architecture and data flow
+- Check existing patterns and conventions
+- Identify dependencies and interfaces
+
+## After Coding
+
+Update design docs if implementation changes:
+- Document new patterns or architectural decisions
+- Keep diagrams and data models current
+- Note any deviations from original design with rationale
+
+## Doc Standards
+
+- Keep docs concise and actionable
+- Use clear headings and structure
+- Include examples where helpful
+- Link to related docs when referencing other components

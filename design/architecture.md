@@ -46,6 +46,14 @@ Parsers are responsible for reading source files and extracting structured data.
 ### 2. Intermediate Representation (IR)
 A set of Pydantic models that define the structure of an article. This serves as the "source of truth" within the application, decoupling parsers from formatters.
 
+The IR includes:
+- Article metadata (title, DOI)
+- Abstract
+- Hierarchical sections with content
+- Figures, tables, and supplementary materials
+
+Note: Keywords, authors, affiliations, journal, and publication date are intentionally excluded from the IR to focus on the core scientific content. The DOI provides a unique identifier that can be used to retrieve full publication metadata if needed.
+
 ### 3. Formatters
 Formatters take the IR and produce the final output.
 - **JSONFormatter**: Produces a structured JSON representation of the article.

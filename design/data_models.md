@@ -10,12 +10,6 @@ The `Article` class is the top-level container for all extracted article data.
 class Article(BaseModel):
     title: str
     doi: Optional[str] = None
-    journal: Optional[str] = None
-    publication_date: Optional[str] = None  # ISO format YYYY-MM-DD
-    keywords: List[str] = Field(default_factory=list)
-    
-    authors: List[Author] = Field(default_factory=list)
-    affiliations: List[Affiliation] = Field(default_factory=list)
     
     abstract: str = ""
     sections: List[Section] = Field(default_factory=list)
@@ -23,6 +17,8 @@ class Article(BaseModel):
     tables: List[Table] = Field(default_factory=list)
     supplementary: List[Supplementary] = Field(default_factory=list)
 ```
+
+**Note**: Keywords, authors, affiliations, journal, and publication_date are intentionally excluded to focus on the core scientific content of articles. The DOI field provides a unique identifier that can be used to retrieve full publication metadata if needed.
 
 ## Supporting Models
 
@@ -35,19 +31,6 @@ class Section(BaseModel):
     level: int  # 1=section, 2=subsection, 3=subsubsection
     content: str  # Text content before any subsections
     children: List['Section'] = Field(default_factory=list)
-```
-
-### Author & Affiliation
-Maps authors to their respective affiliations using ID references.
-
-```python
-class Author(BaseModel):
-    name: str
-    affiliations: List[int]  # List of affiliation IDs
-
-class Affiliation(BaseModel):
-    id: int
-    text: str
 ```
 
 ### Figure & Table

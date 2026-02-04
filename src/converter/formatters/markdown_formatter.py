@@ -44,26 +44,8 @@ class MarkdownFormatter(BaseFormatter):
         lines = []
         lines.append(f"# {article.title}")
         lines.append("")
-        if article.doi or article.journal or article.publication_date:
-            meta = []
-            if article.doi:
-                meta.append(f"DOI: {article.doi}")
-            if article.journal:
-                meta.append(f"Journal: {article.journal}")
-            if article.publication_date:
-                meta.append(f"Published: {article.publication_date}")
-            if meta:
-                lines.append(" ".join(meta))
-                lines.append("")
-        if article.authors:
-            lines.append("**Authors:** " + ", ".join(a.name for a in article.authors))
-            lines.append("")
-        if article.affiliations:
-            for aff in article.affiliations:
-                lines.append(f"{aff.id}. {aff.text}")
-            lines.append("")
-        if article.keywords:
-            lines.append("**Keywords:** " + ", ".join(article.keywords))
+        if article.doi:
+            lines.append(f"DOI: {article.doi}")
             lines.append("")
         if article.abstract:
             lines.append("## Abstract")

@@ -5,9 +5,7 @@ import re
 from bs4 import BeautifulSoup
 
 from converter.models import (
-    Affiliation,
     Article,
-    Author,
     Figure,
     Section,
     Supplementary,
@@ -88,10 +86,6 @@ class HTMLParser(BaseParser):
             logger.warning("No article title found in HTML")
             title = "Untitled"
         doi = self._get_doi(soup)
-        journal = self._get_journal(soup)
-        pub_date = self._get_publication_date(soup)
-        keywords = self._get_keywords(soup)
-        authors, affiliations = self._get_authors_affiliations(soup)
         abstract = self._get_abstract(soup)
         sections = self._get_sections(soup)
         figures = self._get_figures(soup)
@@ -100,11 +94,6 @@ class HTMLParser(BaseParser):
         return Article(
             title=title,
             doi=doi,
-            journal=journal,
-            publication_date=pub_date,
-            keywords=keywords,
-            authors=authors,
-            affiliations=affiliations,
             abstract=abstract,
             sections=sections,
             figures=figures,
@@ -121,73 +110,6 @@ class HTMLParser(BaseParser):
         if meta and meta.get("content"):
             return meta["content"].strip()
         return None
-
-    def _get_journal(self, soup: BeautifulSoup) -> str | None:
-        meta = soup.find("meta", attrs={"name": "citation_journal_title"})
-        if meta and meta.get("content"):
-            return meta["content"].strip()
-        return None
-
-    def _get_publication_date(self, soup: BeautifulSoup) -> str | None:
-        meta = soup.find("meta", attrs={"name": "citation_publication_date"})
-        if meta and meta.get("content"):
-            return meta["content"].strip()
-        return None
-
-    def _get_keywords(self, soup: BeautifulSoup) -> list[str]:
-        meta = soup.find("meta", attrs={"name": "citation_keywords"})
-        if meta and meta.get("content"):
-            return [k.strip() for k in meta["content"].split(",") if k.strip()]
-        return []
-
-    def _get_authors_affiliations(
-        self, soup: BeautifulSoup
-    ) -> tuple[list[Author], list[Affiliation]]:
-        affiliations: list[Affiliation] = []
-        seen_aff: dict[str, int] = {}
-        aff_id = 0
-        for meta in soup.find_all("meta", attrs={"name": "citation_author_institution"}):
-            content = meta.get("content", "").strip()
-            if content and content not in seen_aff:
-                aff_id += 1
-                seen_aff[content] = aff_id
-                affiliations.append(Affiliation(id=aff_id, text=content))
-        authors: list[Author] = []
-        author_metas = soup.find_all("meta", attrs={"name": "citation_author"})
-        inst_metas = soup.find_all("meta", attrs={"name": "citation_author_institution"})
-        for i, meta in enumerate(author_metas):
-            name = (meta.get("content") or "").strip()
-            if not name:
-                continue
-            aff_indices: list[int] = []
-            if i < len(inst_metas):
-                inst = (inst_metas[i].get("content") or "").strip()
-                if inst and inst in seen_aff:
-                    aff_indices.append(seen_aff[inst])
-            authors.append(Author(name=name, affiliations=aff_indices))
-        if authors:
-            return authors, affiliations
-        # Fallback: parse author list and href for Aff1, Aff2
-        for a in soup.select("ul.c-article-author-list a[data-test=author-name]"):
-            name = _element_text(a)
-            if not name or name == "…":
-                continue
-            href = a.get("href", "")
-            aff_indices = []
-            match = re.search(r"Aff(\d+)", href, re.I)
-            if match:
-                aff_indices.append(int(match.group(1)))
-            authors.append(Author(name=name, affiliations=aff_indices))
-        for el in soup.find_all(id=re.compile(r"^Aff\d+$")):
-            aid = el.get("id", "")
-            n = re.match(r"Aff(\d+)", aid)
-            if n:
-                idx = int(n.group(1))
-                text = _element_text(el)
-                if text and not any(a.id == idx for a in affiliations):
-                    affiliations.append(Affiliation(id=idx, text=text))
-        affiliations.sort(key=lambda x: x.id)
-        return authors, affiliations
 
     def _get_abstract(self, soup: BeautifulSoup) -> str:
         section = soup.find("section", attrs={"data-title": "Abstract"})

@@ -46,8 +46,6 @@ class Article(BaseModel):
 
     title: str
     doi: str | None = None
-    journal: str | None = None
-    publication_date: str | None = None
 
     abstract: str = ""
     sections: list[Section] = Field(default_factory=list)

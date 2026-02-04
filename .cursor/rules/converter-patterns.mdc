@@ -9,24 +9,18 @@ alwaysApply: false
 ## HTML Extraction (Nature/Springer journals)
 - Title: `h1.c-article-title`
 - DOI: `meta[name="DOI"]` or `window.dataLayer` JSON
-- Journal: `meta[name="citation_journal_title"]`
-- Date: `meta[name="citation_publication_date"]`
-- Keywords: `meta[name="citation_keywords"]`
-- Authors: `ul.c-article-author-list` → `a[data-test="author-name"]`
-- Affiliations: Elements with `id="Aff1"`, `id="Aff2"`, etc.
 - Abstract: `section[data-title="Abstract"]`
 - Sections (level 1-3): `section[data-title]`, `h2`, `h3`, `h4`
+
+**Note**: Keywords, authors, affiliations, journal, and publication date are intentionally NOT extracted.
 
 ## XML Extraction (PubMed Central JATS)
 - Title: `article-title`
 - DOI: `article-id[pub-id-type="doi"]`
-- Journal: `journal-title`
-- Date: `pub-date` → `year`, `month`, `day`
-- Keywords: `kwd-group` → `kwd`
-- Authors: `contrib[contrib-type="author"]` → `surname`, `given-names`
-- Affiliations: `aff[id]` with `label` and text
 - Abstract: `abstract`
 - Sections (level 1-3): `sec[disp-level="1|2|3"]` with nested `title`
+
+**Note**: Keywords, authors, affiliations, journal, and publication date are intentionally NOT extracted.
 
 ## Error Handling
 - Warn and continue on missing/malformed elements
@@ -44,14 +38,14 @@ class Section:
 
 class Article:
     title: str
-    authors: list[Author]
-    affiliations: list[Affiliation]
+    doi: str | None
     abstract: str
     sections: list[Section]  # Top-level sections only
     figures: list[Figure]
     tables: list[Table]
     supplementary: list[Supplementary]  # {"label": str, "description": str}
     # Math in-place, citations removed, URLs as markdown
+    # Note: keywords, authors, affiliations, journal, and publication_date are NOT included
 ```
 
 ## Special Content Handling

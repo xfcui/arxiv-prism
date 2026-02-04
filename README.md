@@ -8,7 +8,7 @@ Transform complex scientific articles into clean, readable formats. Whether you'
 ## ✨ Key Features
 
 - **Multi-Source Support**: Seamlessly handles Nature/Springer HTML and PubMed Central (JATS) XML.
-- **Smart Extraction**: Captures metadata, authors, affiliations, and recursive section hierarchies.
+- **Smart Extraction**: Captures metadata and recursive section hierarchies from scientific articles.
 - **Rich Elements**: Converts complex tables to Markdown and preserves mathematical formulas as LaTeX.
 - **Clean Output**: Automatically strips citations and reference lists for a focused reading experience.
 - **Batch Processing**: Convert entire directories of research papers in one command.
