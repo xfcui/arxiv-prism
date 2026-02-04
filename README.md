@@ -3,89 +3,83 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Transform complex scientific articles into clean, readable formats. Whether you're building a dataset for LLMs or just need a clean Markdown version of a Nature paper, this tool has you covered.
+Turn messy scientific articles into clean, readable formats. Perfect for building LLM datasets or getting a clean Markdown version of any Nature or PubMed paper.
 
-## ✨ Key Features
+```
+HTML/XML Article  →  converter  →  Clean Markdown or JSON
+```
 
-- **Multi-Source Support**: Seamlessly handles Nature/Springer HTML and PubMed Central (JATS) XML.
-- **Smart Extraction**: Captures metadata and recursive section hierarchies from scientific articles.
-- **Rich Elements**: Converts complex tables to Markdown and preserves mathematical formulas as LaTeX.
-- **Clean Output**: Automatically strips citations and reference lists for a focused reading experience.
-- **Batch Processing**: Convert entire directories of research papers in one command.
+## ✨ What You Get
+
+- **Nature & PubMed support** — Works with Springer HTML and PubMed Central XML out of the box
+- **Smart structure** — Extracts metadata, sections, and nested headings automatically
+- **Tables & math** — Converts tables to Markdown and keeps formulas as LaTeX
+- **No noise** — Strips citations and references so you can focus on content
+- **Batch mode** — Process entire folders in one command
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Installation
-
-Clone the repository and install the dependencies:
+### 1. Install
 
 ```bash
 git clone https://github.com/your-repo/article-converter.git
-cd article-converter
-pip install -r requirements.txt
+cd article-converter && pip install -r requirements.txt
 ```
 
-### 2. Basic Usage
-
-Convert a single article to Markdown:
+### 2. Convert
 
 ```bash
+# Single file → Markdown
 python -m converter convert article.html -o result.md
+
+# Folder of XMLs → JSON
+python -m converter batch ./papers/ -o ./output/ --format json
 ```
 
-Convert a folder of XML files to JSON:
-
-```bash
-python -m converter batch ./xml_files/ -o ./output_json/ --format json
-```
+That's it! Your clean output is ready.
 
 ---
 
-## 🛠️ Detailed Usage
+## 🛠️ All Options
 
-The CLI is designed to be intuitive. Use `--help` on any command to see all options.
+Use `--help` on any command to see available flags.
 
-### Single File Conversion
-```bash
-python -m converter convert <input_path> [OPTIONS]
-```
-- `-o, --output`: Specify output filename.
-- `-f, --format`: Choose `markdown` or `json`. Default: `json`.
-- `--input-format`: Choose `html`, `xml`, or `auto`. Default: `auto`.
-- `-v, --verbose`: See what's happening under the hood.
-- `-q, --quiet`: Suppress non-error output.
+| Command | Description |
+| :--- | :--- |
+| `convert <file>` | Convert a single article |
+| `batch <dir>` | Convert all files in a directory |
 
-### Batch Processing
-```bash
-python -m converter batch <directory_path> --output <output_dir> [OPTIONS]
-```
-- `-o, --output`: Where to save the results.
-- `-f, --format`: Choose `markdown` or `json`. Default: `markdown`.
-- `--input-format`: Choose `html`, `xml`, or `auto`. Default: `auto`.
-- `-v, --verbose`: See what's happening under the hood.
-- `-q, --quiet`: Suppress non-error output.
+**Common flags:**
+
+| Flag | What it does |
+| :--- | :--- |
+| `-o, --output` | Output file or directory |
+| `-f, --format` | `markdown` or `json` (default: `json` for single, `markdown` for batch) |
+| `--input-format` | Force `html`, `xml`, or `auto` (default: `auto`) |
+| `-v, --verbose` | Show detailed progress |
+| `-q, --quiet` | Suppress all non-error output |
 
 ---
 
-## 📂 Supported Formats
+## 📂 Supported Sources
 
-| Source | Format | Description |
+| Source | Format | Example |
 | :--- | :--- | :--- |
-| **Nature / Springer** | HTML | Full article pages from nature.com or springer.com |
-| **PubMed Central** | XML | JATS (Journal Article Tag Suite) standard files |
+| **Nature / Springer** | HTML | Full article pages from nature.com |
+| **PubMed Central** | XML | JATS standard files from PMC |
 
 ---
 
-## 📖 Documentation
+## 📖 Learn More
 
-For a deeper dive into the system architecture and data models, check out our [Design Docs](./design/architecture.md).
+Check out the [Design Docs](./design/architecture.md) for architecture details and data models.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Feel free to open an issue or submit a PR.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details.

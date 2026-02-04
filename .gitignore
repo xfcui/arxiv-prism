@@ -17,3 +17,8 @@ venv/
 .vscode/
 *.swp
 *.swo
+
+# Project data
+html/
+xml/
+output/
