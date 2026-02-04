@@ -52,15 +52,20 @@ The CLI is designed to be intuitive. Use `--help` on any command to see all opti
 python -m converter convert <input_path> [OPTIONS]
 ```
 - `-o, --output`: Specify output filename.
-- `-f, --format`: Choose `markdown` or `json` (auto-detected by default).
+- `-f, --format`: Choose `markdown` or `json`. Default: `json`.
+- `--input-format`: Choose `html`, `xml`, or `auto`. Default: `auto`.
 - `-v, --verbose`: See what's happening under the hood.
+- `-q, --quiet`: Suppress non-error output.
 
 ### Batch Processing
 ```bash
-python -m converter batch <directory_path> [OPTIONS]
+python -m converter batch <directory_path> --output <output_dir> [OPTIONS]
 ```
-- `-o, --output-dir`: Where to save the results.
-- `--recursive`: Search subfolders for articles.
+- `-o, --output`: Where to save the results.
+- `-f, --format`: Choose `markdown` or `json`. Default: `markdown`.
+- `--input-format`: Choose `html`, `xml`, or `auto`. Default: `auto`.
+- `-v, --verbose`: See what's happening under the hood.
+- `-q, --quiet`: Suppress non-error output.
 
 ---
 
