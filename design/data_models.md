@@ -9,13 +9,15 @@ The `Article` class is the top-level container for all extracted article data.
 ```python
 class Article(BaseModel):
     title: str
-    doi: Optional[str] = None
+    doi: str | None = None
     
     abstract: str = ""
-    sections: List[Section] = Field(default_factory=list)
-    figures: List[Figure] = Field(default_factory=list)
-    tables: List[Table] = Field(default_factory=list)
-    supplementary: List[Supplementary] = Field(default_factory=list)
+    sections: list[Section] = Field(default_factory=list)
+    figures: list[Figure] = Field(default_factory=list)
+    tables: list[Table] = Field(default_factory=list)
+    supplementary: list[Supplementary] = Field(default_factory=list)
+    
+    model_config = {"extra": "forbid"}
 ```
 
 **Note**: Keywords, authors, affiliations, journal, and publication_date are intentionally excluded to focus on the core scientific content of articles. The DOI field provides a unique identifier that can be used to retrieve full publication metadata if needed.
@@ -30,7 +32,9 @@ class Section(BaseModel):
     title: str
     level: int = Field(ge=1, le=6, description="1=section, 2=subsection, ... 6=deepest")
     content: str = ""
-    sections: List['Section'] = Field(default_factory=list)
+    sections: list['Section'] = Field(default_factory=list)
+    
+    model_config = {"extra": "forbid"}
 ```
 
 ### Figure & Table
@@ -46,7 +50,7 @@ class Table(BaseModel):
     id: str
     label: str
     caption: str
-    data: List[List[str]] = Field(default_factory=list)  # 2D list for table rows/columns
+    data: list[list[str]] = Field(default_factory=list)  # 2D list for table rows/columns
 ```
 
 ### Supplementary

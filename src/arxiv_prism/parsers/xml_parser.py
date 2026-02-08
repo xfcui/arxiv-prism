@@ -4,16 +4,16 @@ import logging
 import re
 from xml.etree import ElementTree as ET
 
-from converter.models import (
+from arxiv_prism.models import (
     Article,
     Figure,
     Section,
     Table,
 )
-from converter.models import Supplementary  # noqa: F401 - used in return type
-from converter.parsers.base import BaseParser
-from converter.text_utils import strip_citations
-from converter.math_utils import mathml_element_to_latex
+from arxiv_prism.models import Supplementary  # noqa: F401 - used in return type
+from arxiv_prism.parsers.base import BaseParser
+from arxiv_prism.text_utils import strip_citations
+from arxiv_prism.math_utils import mathml_element_to_latex
 
 logger = logging.getLogger(__name__)
 

@@ -2,8 +2,8 @@
 
 import json
 
-from converter.models import Article
-from converter.formatters.base import BaseFormatter
+from arxiv_prism.models import Article
+from arxiv_prism.formatters.base import BaseFormatter
 
 
 class JSONFormatter(BaseFormatter):

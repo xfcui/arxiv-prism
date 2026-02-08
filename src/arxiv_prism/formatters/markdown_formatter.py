@@ -1,7 +1,7 @@
 """Markdown formatter for article output."""
 
-from converter.models import Article, Section
-from converter.formatters.base import BaseFormatter
+from arxiv_prism.models import Article, Section
+from arxiv_prism.formatters.base import BaseFormatter
 
 
 def _section_to_md(section: Section, heading_base: int) -> str:

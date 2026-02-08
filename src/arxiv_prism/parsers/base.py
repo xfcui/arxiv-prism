@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from converter.models import Article
+from arxiv_prism.models import Article
 
 
 class BaseParser(ABC):

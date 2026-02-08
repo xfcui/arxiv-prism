@@ -6,54 +6,50 @@
 Turn messy scientific articles into clean, readable formats. Perfect for building LLM datasets or getting a clean Markdown version of any Nature or PubMed paper.
 
 ```
-HTML/XML Article  →  converter  →  Clean Markdown or JSON
+HTML/XML Article  →  arxiv-prism  →  Clean Markdown or JSON
 ```
 
-## ✨ What You Get
+## ✨ Key Features
 
-- **Nature & PubMed support** — Works with Springer HTML and PubMed Central XML out of the box
-- **Smart structure** — Extracts metadata, sections, and nested headings automatically
-- **Tables & math** — Converts tables to Markdown and keeps formulas as LaTeX
-- **No noise** — Strips citations and references so you can focus on content
-- **Batch mode** — Process entire folders in one command
+- **✨ Nature & PubMed support** — Works with Springer HTML and PubMed Central XML out of the box
+- **✨ Smart structure** — Extracts metadata, sections, and nested headings automatically
+- **✨ Tables & math** — Converts tables to Markdown and keeps formulas as LaTeX
+- **✨ No noise** — Strips citations and references so you can focus on content
+- **✨ Batch mode** — Process entire folders in one command
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Install
-
-From the project root, install the package in editable mode so you can run `python -m converter`:
+### 1. Installation
 
 ```bash
-git clone https://github.com/your-repo/article-converter.git
-cd article-converter
+git clone https://github.com/your-repo/arxiv-prism.git
+cd arxiv-prism
 pip install -e .
 ```
 
-To run without installing, use the `src` directory on `PYTHONPATH`:
+### 2. Basic Usage
 
-```bash
-PYTHONPATH=src python -m converter --help
-```
-
-### 2. Convert
-
-Run the converter with `python -m converter`:
+Run the converter with the `arxiv-prism` command:
 
 ```bash
 # Single file → Markdown
-python -m converter convert article.html -o result.md
+arxiv-prism convert article.html -o result.md
 
 # Folder of XMLs → JSON
-python -m converter batch ./papers/ -o ./output/ --format json
+arxiv-prism batch ./papers/ -o ./output/ --format json
 ```
 
-That's it! Your clean output is ready.
+Or run as a module:
+
+```bash
+python -m arxiv_prism convert article.html -o result.md
+```
 
 ---
 
-## 🛠️ All Options
+## 🛠️ Detailed Usage
 
 Use `--help` on any command to see available flags.
 
@@ -72,8 +68,6 @@ Use `--help` on any command to see available flags.
 | `--input-format` | Force `html`, `xml`, or `auto` (default: `auto`) |
 | `-v, --verbose` | Show detailed progress |
 | `-q, --quiet` | Suppress all non-error output |
-
-By default, conversion is skipped when the output file already exists. Use `-F` or `--force` to overwrite. Batch mode prints only a summary at the end (e.g. *Done. 5/10 files converted. 5 skipped (already exist).*).
 
 ---
 

@@ -1,6 +1,6 @@
 # Architecture Design
 
-The Article Format Converter is designed as a modular pipeline to transform scientific articles from various input formats (HTML, XML) into a unified intermediate representation (IR), which can then be formatted into different output formats (JSON, Markdown).
+The arxiv-prism is designed as a modular pipeline to transform scientific articles from various input formats (HTML, XML) into a unified intermediate representation (IR), which can then be formatted into different output formats (JSON, Markdown).
 
 ## System Overview
 
@@ -60,7 +60,7 @@ Formatters take the IR and produce the final output.
 - **MarkdownFormatter**: Produces a human-readable Markdown file, including tables, figures (placeholders), and LaTeX math.
 
 ### 4. CLI Interface
-A Click-based command-line interface that provides commands for single-file and batch conversion. Batch mode uses **tqdm** for progress over files (disabled when `--quiet` is set).
+A Click-based command-line interface that provides commands for single-file and batch conversion. The command is `arxiv-prism`. Batch mode uses **tqdm** for progress over files (disabled when `--quiet` is set).
 
 ## Data Flow
 1. The user specifies an input file or directory via the CLI.

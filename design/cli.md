@@ -1,6 +1,6 @@
 # CLI Design
 
-The converter provides a command-line interface built with `click`.
+The converter provides a command-line interface via the `arxiv-prism` command, built with `click`.
 
 ## Commands
 
@@ -8,22 +8,28 @@ The converter provides a command-line interface built with `click`.
 Converts a single file.
 
 ```bash
-python -m converter convert <input_file> [OPTIONS]
+arxiv-prism convert <input_file> [OPTIONS]
+```
+
+Or via module:
+
+```bash
+python -m arxiv_prism convert <input_file> [OPTIONS]
 ```
 
 **Options:**
-- `-o, --output`: Path to output file.
+- `-o, --output`: Path to output file (default: stdout).
 - `-f, --format`: Output format (`json` or `markdown`). Default: `json`.
 - `--input-format`: Input format (`html`, `xml`, or `auto`). Default: `auto`.
 - `-F, --force`: Overwrite output if it already exists (default: skip when output exists).
-- `-v, --verbose`: Increase logging verbosity.
-- `-q, --quiet`: Suppress non-error output.
+- `-v, --verbose`: Increase logging verbosity (DEBUG).
+- `-q, --quiet`: Suppress non-error output (ERROR only).
 
 ### `batch`
 Converts all files in a directory.
 
 ```bash
-python -m converter batch <input_dir> --output <output_dir> [OPTIONS]
+arxiv-prism batch <input_dir> --output <output_dir> [OPTIONS]
 ```
 
 **Options:**

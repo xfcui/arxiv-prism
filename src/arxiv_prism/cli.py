@@ -7,8 +7,8 @@ from pathlib import Path
 import click
 from tqdm import tqdm
 
-from converter.formatters import JSONFormatter, MarkdownFormatter
-from converter.parsers import HTMLParser, XMLParser
+from arxiv_prism.formatters import JSONFormatter, MarkdownFormatter
+from arxiv_prism.parsers import HTMLParser, XMLParser
 
 logger = logging.getLogger("converter")
 
