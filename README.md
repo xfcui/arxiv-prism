@@ -68,9 +68,12 @@ Use `--help` on any command to see available flags.
 | :--- | :--- |
 | `-o, --output` | Output file or directory |
 | `-f, --format` | `markdown` or `json` (default: `json` for single, `markdown` for batch) |
+| `-F, --force` | Overwrite output if it already exists (default: skip) |
 | `--input-format` | Force `html`, `xml`, or `auto` (default: `auto`) |
 | `-v, --verbose` | Show detailed progress |
 | `-q, --quiet` | Suppress all non-error output |
+
+By default, conversion is skipped when the output file already exists. Use `-F` or `--force` to overwrite. Batch mode prints only a summary at the end (e.g. *Done. 5/10 files converted. 5 skipped (already exist).*).
 
 ---
 

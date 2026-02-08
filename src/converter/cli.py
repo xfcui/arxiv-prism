@@ -102,7 +102,6 @@ def convert(
 ) -> None:
     """Convert a single article file."""
     if not force and output is not None and output.exists():
-        click.echo(f"Skipping {input_file.name} (output exists: {output})")
         return
     
     fmt = input_format
@@ -185,8 +184,6 @@ def batch(
         rel = path.relative_to(input_dir)
         out_path = output / rel.with_suffix(ext)
         if not force and out_path.exists():
-            if not quiet:
-                tqdm.write(f"Skipping {rel} (output exists: {out_path.relative_to(output)})")
             skipped += 1
             continue
 
