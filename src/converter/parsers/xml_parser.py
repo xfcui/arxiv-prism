@@ -111,14 +111,14 @@ def _parse_sec(sec_el: ET.Element, level: int) -> Section:
     title_el = sec_el.find("title")
     title = _norm(_text(title_el)) if title_el is not None else ""
     content_parts: list[str] = []
-    children: list[Section] = []
+    sections: list[Section] = []
     for child in sec_el:
         if child.tag == "title":
             continue
         if child.tag == "sec":
             disp = child.get("disp-level")
             sub_level = int(disp) if disp and disp.isdigit() else level + 1
-            children.append(_parse_sec(child, sub_level))
+            sections.append(_parse_sec(child, sub_level))
         elif child.tag == "p":
             content_parts.append(_extract_paragraph_text(child))
         elif child.tag == "fig":
@@ -130,7 +130,7 @@ def _parse_sec(sec_el: ET.Element, level: int) -> Section:
         elif child.tag == "inline-formula":
             content_parts.append(_formula_to_latex(child, display=False))
     content = "\n\n".join(p for p in content_parts if p.strip())
-    return Section(title=title, level=level, content=content, children=children)
+    return Section(title=title, level=level, content=content, sections=sections)
 
 
 class XMLParser(BaseParser):
@@ -140,6 +140,9 @@ class XMLParser(BaseParser):
         """Parse XML content into an Article."""
         root = ET.fromstring(content)
         article = root.find("article")
+        if article is None:
+            # Wrapped formats (e.g. Springer Nature <response><records><article>)
+            article = root.find(".//article")
         if article is None:
             article = root
         front = article.find("front")

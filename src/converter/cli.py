@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import click
+from tqdm import tqdm
 
 from converter.formatters import JSONFormatter, MarkdownFormatter
 from converter.parsers import HTMLParser, XMLParser
@@ -17,6 +18,9 @@ def _configure_logging(verbose: bool, quiet: bool) -> None:
     logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
 
+INPUT_EXTS = (".html", ".htm", ".xml", ".nxml")
+
+
 def _detect_format(path: Path) -> str:
     """Return 'html' or 'xml' based on file extension."""
     suf = path.suffix.lower()
@@ -25,6 +29,14 @@ def _detect_format(path: Path) -> str:
     if suf in (".xml", ".nxml"):
         return "xml"
     return ""
+
+
+def _collect_input_files(input_dir: Path) -> list[Path]:
+    """Collect all .html/.xml files under input_dir recursively."""
+    return sorted(
+        p for p in input_dir.rglob("*")
+        if p.is_file() and p.suffix.lower() in INPUT_EXTS
+    )
 
 
 def _get_parser(fmt: str):
@@ -76,19 +88,20 @@ def cli(ctx: click.Context, verbose: bool, quiet: bool) -> None:
     help="Input format (default: auto from extension).",
 )
 @click.option(
-    "--skip-exist",
+    "--force",
+    "-F",
     is_flag=True,
-    help="Skip processing if output file already exists.",
+    help="Overwrite output file if it already exists (default: skip).",
 )
 def convert(
     input_file: Path,
     output: Path | None,
     output_format: str,
     input_format: str,
-    skip_exist: bool,
+    force: bool,
 ) -> None:
     """Convert a single article file."""
-    if skip_exist and output is not None and output.exists():
+    if not force and output is not None and output.exists():
         click.echo(f"Skipping {input_file.name} (output exists: {output})")
         return
     
@@ -142,55 +155,62 @@ def convert(
     help="Input format (default: auto from extension).",
 )
 @click.option(
-    "--skip-exist",
+    "--force",
+    "-F",
     is_flag=True,
-    help="Skip processing if output file already exists.",
+    help="Overwrite output files that already exist (default: skip).",
 )
+@click.pass_context
 def batch(
+    ctx: click.Context,
     input_dir: Path,
     output: Path,
     output_format: str,
     input_format: str,
-    skip_exist: bool,
+    force: bool,
 ) -> None:
-    """Convert all article files in a directory."""
+    """Convert all article files in a directory (recursive). Input: **/*.{html,xml}. Output: **/*.json or **/*.md."""
     formatter = _get_formatter(output_format)
     ext = ".json" if output_format == "json" else ".md"
     output.mkdir(parents=True, exist_ok=True)
-    files = list(input_dir.iterdir())
+    files = _collect_input_files(input_dir)
     if not files:
-        click.echo("No files in directory.")
+        click.echo("No .html/.xml files in directory.")
         return
     ok = 0
     skipped = 0
-    for path in sorted(files):
-        if not path.is_file():
-            continue
-        
-        out_path = output / (path.stem + ext)
-        if skip_exist and out_path.exists():
-            click.echo(f"Skipping {path.name} (output exists: {out_path.name})")
+    quiet = ctx.parent.params.get("quiet", False) if ctx.parent else False
+    iterator = tqdm(files, desc="Converting", unit="file", disable=quiet)
+    for path in iterator:
+        rel = path.relative_to(input_dir)
+        out_path = output / rel.with_suffix(ext)
+        if not force and out_path.exists():
+            if not quiet:
+                tqdm.write(f"Skipping {rel} (output exists: {out_path.relative_to(output)})")
             skipped += 1
             continue
-        
-        fmt = input_format
-        if fmt == "auto":
-            fmt = _detect_format(path)
-            if not fmt:
-                logger.warning("Skipping %s (unknown extension).", path.name)
-                continue
+
+        fmt = input_format if input_format != "auto" else _detect_format(path)
+        if not fmt:
+            logger.warning("Skipping %s (unknown extension).", path.name)
+            continue
         try:
             parser = _get_parser(fmt)
             content = path.read_text(encoding="utf-8", errors="replace")
             article = parser.parse(content)
             out_str = formatter.format(article)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
             out_path.write_text(out_str, encoding="utf-8")
             ok += 1
-            click.echo(f"Converted {path.name} -> {out_path.name}")
+            if quiet:
+                iterator.set_postfix_str(f"ok={ok}")
         except Exception as e:
             logger.warning("Failed %s: %s", path.name, e)
-            click.secho(f"Failed {path.name}: {e}", fg="red")
-    
+            if not quiet:
+                tqdm.write(click.style(f"Failed {rel}: {e}", fg="red"))
+
+    if not quiet:
+        iterator.close()
     summary = f"Done. {ok}/{len(files)} files converted."
     if skipped:
         summary += f" {skipped} skipped (already exist)."

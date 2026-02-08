@@ -32,9 +32,9 @@ alwaysApply: false
 # Recursive Section structure for arbitrary nesting
 class Section:
     title: str
-    level: int           # 1=section, 2=subsection, 3=subsubsection
-    content: str         # Text before any child sections
-    children: list[Section]  # Nested subsections
+    level: int           # 1=section, 2=subsection, ... 6=deepest
+    content: str         # Text before any nested sections
+    sections: list[Section]  # Nested subsections
 
 class Article:
     title: str

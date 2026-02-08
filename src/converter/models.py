@@ -7,9 +7,9 @@ class Section(BaseModel):
     """Recursive section (section, subsection, subsubsection)."""
 
     title: str
-    level: int = Field(ge=1, le=3, description="1=section, 2=subsection, 3=subsubsection")
+    level: int = Field(ge=1, le=6, description="1=section, 2=subsection, ... 6=deepest")
     content: str = ""
-    children: list["Section"] = Field(default_factory=list)
+    sections: list["Section"] = Field(default_factory=list)
 
     model_config = {"extra": "forbid"}
 

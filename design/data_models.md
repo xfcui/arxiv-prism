@@ -28,9 +28,9 @@ Sections are recursive to support arbitrary nesting depths (Section -> Subsectio
 ```python
 class Section(BaseModel):
     title: str
-    level: int = Field(ge=1, le=3, description="1=section, 2=subsection, 3=subsubsection")
+    level: int = Field(ge=1, le=6, description="1=section, 2=subsection, ... 6=deepest")
     content: str = ""
-    children: List['Section'] = Field(default_factory=list)
+    sections: List['Section'] = Field(default_factory=list)
 ```
 
 ### Figure & Table
@@ -46,7 +46,7 @@ class Table(BaseModel):
     id: str
     label: str
     caption: str
-    data: List[List[str]]  # 2D list for table rows/columns
+    data: List[List[str]] = Field(default_factory=list)  # 2D list for table rows/columns
 ```
 
 ### Supplementary

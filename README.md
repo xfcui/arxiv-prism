@@ -39,7 +39,7 @@ PYTHONPATH=src python -m converter --help
 
 ### 2. Convert
 
-Run the converter with `python -m converter` (not `python -m src.converter`):
+Run the converter with `python -m converter`:
 
 ```bash
 # Single file → Markdown

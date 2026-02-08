@@ -135,7 +135,7 @@ class HTMLParser(BaseParser):
             content_div = section_el.select_one(".c-article-section__content")
             if not content_div:
                 sections_out.append(
-                    Section(title=title, level=1, content="", children=[])
+                    Section(title=title, level=1, content="", sections=[])
                 )
                 continue
             blocks: list[tuple[int, str, str, list]] = []
@@ -176,31 +176,31 @@ class HTMLParser(BaseParser):
                 blocks.append((current_level, current_title, content, []))
             if not blocks:
                 sections_out.append(
-                    Section(title=title, level=1, content="", children=[])
+                    Section(title=title, level=1, content="", sections=[])
                 )
                 continue
-            # Build tree: first block is level 1, then level 2/3 are children
+            # Build tree: first block is level 1, then level 2/3 are nested sections
             first_content = blocks[0][2] if blocks else ""
-            children: list[Section] = []
+            nested: list[Section] = []
             i = 1
             while i < len(blocks):
                 lv, tt, ct, _ = blocks[i]
                 if lv == 2:
-                    sub_children: list[Section] = []
+                    sub_sections: list[Section] = []
                     j = i + 1
                     while j < len(blocks) and blocks[j][0] == 3:
-                        sub_children.append(
+                        sub_sections.append(
                             Section(
                                 title=blocks[j][1],
                                 level=3,
                                 content=blocks[j][2],
-                                children=[],
+                                sections=[],
                             )
                         )
                         j += 1
-                    children.append(
+                    nested.append(
                         Section(
-                            title=tt, level=2, content=ct, children=sub_children
+                            title=tt, level=2, content=ct, sections=sub_sections
                         )
                     )
                     i = j
@@ -211,7 +211,7 @@ class HTMLParser(BaseParser):
                     title=title,
                     level=1,
                     content=first_content,
-                    children=children,
+                    sections=nested,
                 )
             )
         return sections_out

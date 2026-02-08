@@ -60,7 +60,7 @@ Formatters take the IR and produce the final output.
 - **MarkdownFormatter**: Produces a human-readable Markdown file, including tables, figures (placeholders), and LaTeX math.
 
 ### 4. CLI Interface
-A Click-based command-line interface that provides commands for single-file and batch conversion.
+A Click-based command-line interface that provides commands for single-file and batch conversion. Batch mode uses **tqdm** for progress over files (disabled when `--quiet` is set).
 
 ## Data Flow
 1. The user specifies an input file or directory via the CLI.

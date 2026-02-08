@@ -15,10 +15,9 @@ class BaseFormatter(ABC):
 
 ## JSON Formatter
 
-Serializes the `Article` model directly to JSON.
+Serializes the `Article` model directly to JSON via `model_dump(mode="json")`.
 
-- **Output**: A single JSON file.
-- **Options**: Support for pretty-printing (indentation).
+- **Output**: Compact JSON (no indentation), UTF-8 with `ensure_ascii=False`.
 
 ## Markdown Formatter
 
@@ -26,7 +25,7 @@ Generates a human-readable Markdown file.
 
 ### Formatting Rules
 - **Header**: Includes title and DOI.
-- **Sections**: Uses `#`, `##`, `###` based on section level.
+- **Sections**: Heading level = `heading_base + section.level - 1`, capped at 6 (`#`…`######`). Nested sections rendered recursively via `section.sections`.
 - **Figures**: Rendered as a block with label and caption, plus an `(image omitted)` note.
 - **Tables**: Converted to standard Markdown table syntax.
 - **Math**: Preserved as LaTeX `$inline$` or `$$display$$`.

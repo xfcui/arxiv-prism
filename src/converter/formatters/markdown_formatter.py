@@ -5,7 +5,7 @@ from converter.formatters.base import BaseFormatter
 
 
 def _section_to_md(section: Section, heading_base: int) -> str:
-    """Render a section and its children to Markdown."""
+    """Render a section and its nested sections to Markdown."""
     lines = []
     level = heading_base + section.level - 1
     prefix = "#" * min(level, 6)
@@ -15,8 +15,8 @@ def _section_to_md(section: Section, heading_base: int) -> str:
     if section.content.strip():
         lines.append(section.content.strip())
         lines.append("")
-    for child in section.children:
-        lines.append(_section_to_md(child, heading_base))
+    for sub in section.sections:
+        lines.append(_section_to_md(sub, heading_base))
     return "\n".join(lines)
 
 
