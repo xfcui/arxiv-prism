@@ -60,8 +60,6 @@ class MarkdownFormatter(BaseFormatter):
             for fig in article.figures:
                 lines.append(f"**{fig.label or fig.id}**: {fig.caption}")
                 lines.append("")
-                lines.append("*(image omitted)*")
-                lines.append("")
         if article.tables:
             lines.append("---")
             lines.append("")
