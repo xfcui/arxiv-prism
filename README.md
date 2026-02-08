@@ -23,12 +23,23 @@ HTML/XML Article  →  converter  →  Clean Markdown or JSON
 
 ### 1. Install
 
+From the project root, install the package in editable mode so you can run `python -m converter`:
+
 ```bash
 git clone https://github.com/your-repo/article-converter.git
-cd article-converter && pip install -r requirements.txt
+cd article-converter
+pip install -e .
+```
+
+To run without installing, use the `src` directory on `PYTHONPATH`:
+
+```bash
+PYTHONPATH=src python -m converter --help
 ```
 
 ### 2. Convert
+
+Run the converter with `python -m converter` (not `python -m src.converter`):
 
 ```bash
 # Single file → Markdown
