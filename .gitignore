@@ -1,3 +1,6 @@
+# Project data
+articles/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -17,6 +20,3 @@ venv/
 .vscode/
 *.swp
 *.swo
-
-# Project data
-articles/
