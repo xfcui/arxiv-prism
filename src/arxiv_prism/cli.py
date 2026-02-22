@@ -31,11 +31,22 @@ def _detect_format(path: Path) -> str:
     return ""
 
 
-def _collect_input_files(input_dir: Path) -> list[Path]:
-    """Collect all .html/.xml files under input_dir recursively."""
+XML_EXTS = (".xml", ".nxml")
+
+
+def _collect_input_files(
+    input_dir: Path, xml_only: bool = False
+) -> list[Path]:
+    """Collect input files under input_dir recursively.
+
+    Args:
+        input_dir: Directory to search.
+        xml_only: If True, only collect .xml/.nxml files.
+    """
+    exts = XML_EXTS if xml_only else INPUT_EXTS
     return sorted(
         p for p in input_dir.rglob("*")
-        if p.is_file() and p.suffix.lower() in INPUT_EXTS
+        if p.is_file() and p.suffix.lower() in exts
     )
 
 
@@ -131,13 +142,18 @@ def convert(
 
 
 @cli.command()
-@click.argument("input_dir", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument(
+    "input_dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default="articles",
+    required=False,
+)
 @click.option(
     "--output",
     "-o",
     type=click.Path(path_type=Path),
-    required=True,
-    help="Output directory.",
+    default=None,
+    help="Output directory (default: same as input_dir).",
 )
 @click.option(
     "--format",
@@ -154,6 +170,11 @@ def convert(
     help="Input format (default: auto from extension).",
 )
 @click.option(
+    "--xml-only",
+    is_flag=True,
+    help="Only process .xml/.nxml files (articles/**/*.xml).",
+)
+@click.option(
     "--force",
     "-F",
     is_flag=True,
@@ -163,18 +184,21 @@ def convert(
 def batch(
     ctx: click.Context,
     input_dir: Path,
-    output: Path,
+    output: Path | None,
     output_format: str,
     input_format: str,
+    xml_only: bool,
     force: bool,
 ) -> None:
-    """Convert all article files in a directory (recursive). Input: **/*.{html,xml}. Output: **/*.json or **/*.md."""
+    """Convert article files in a directory. Default: articles/**/*.xml → articles/**/*.md."""
+    output = output or input_dir
     formatter = _get_formatter(output_format)
     ext = ".json" if output_format == "json" else ".md"
     output.mkdir(parents=True, exist_ok=True)
-    files = _collect_input_files(input_dir)
+    files = _collect_input_files(input_dir, xml_only=xml_only)
     if not files:
-        click.echo("No .html/.xml files in directory.")
+        msg = "No .xml/.nxml files in directory." if xml_only else "No .html/.xml files in directory."
+        click.echo(msg)
         return
     ok = 0
     skipped = 0

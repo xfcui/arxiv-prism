@@ -34,16 +34,20 @@ pip install -e .
 Run the converter with the `arxiv-prism` command:
 
 ```bash
+# articles/**/*.xml → articles/**/*.md (default batch workflow)
+arxiv-prism batch --xml-only
+
 # Single file → Markdown
 arxiv-prism convert article.html -o result.md
 
-# Folder of XMLs → JSON
+# Custom folder of XMLs → JSON
 arxiv-prism batch ./papers/ -o ./output/ --format json
 ```
 
 Or run as a module:
 
 ```bash
+python -m arxiv_prism batch --xml-only
 python -m arxiv_prism convert article.html -o result.md
 ```
 
@@ -56,7 +60,7 @@ Use `--help` on any command to see available flags.
 | Command | Description |
 | :--- | :--- |
 | `convert <file>` | Convert a single article |
-| `batch <dir>` | Convert all files in a directory |
+| `batch [dir]` | Convert files in a directory (default: `articles/` → `articles/`) |
 
 **Common flags:**
 
@@ -65,6 +69,7 @@ Use `--help` on any command to see available flags.
 | `-o, --output` | Output file or directory |
 | `-f, --format` | `markdown` or `json` (default: `json` for single, `markdown` for batch) |
 | `-F, --force` | Overwrite output if it already exists (default: skip) |
+| `--xml-only` | Only process `.xml`/`.nxml` files (for `articles/**/*.xml`) |
 | `--input-format` | Force `html`, `xml`, or `auto` (default: `auto`) |
 | `-v, --verbose` | Show detailed progress |
 | `-q, --quiet` | Suppress all non-error output |

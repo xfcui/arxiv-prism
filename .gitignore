@@ -19,6 +19,7 @@ venv/
 *.swo
 
 # Project data
+articles/
 html/
 xml/
 output/
