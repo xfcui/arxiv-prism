@@ -220,6 +220,48 @@ def batch(
     click.echo(summary)
 
 
+@cli.command()
+@click.option(
+    "--data-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default="data",
+    help="Data directory to watch/process (default: data).",
+)
+@click.option(
+    "--format",
+    "-f",
+    "output_format",
+    type=click.Choice(["json", "markdown"]),
+    default="markdown",
+    help="Output format (default: markdown).",
+)
+@click.option(
+    "--force",
+    "-F",
+    is_flag=True,
+    help="Overwrite output files that already exist (default: skip).",
+)
+@click.pass_context
+def auto(
+    ctx: click.Context,
+    data_dir: Path,
+    output_format: str,
+    force: bool,
+) -> None:
+    """Automatically convert all .xml/.html files in data/ to .md.
+    
+    Equivalent to: batch data/ --output data/ --format markdown
+    """
+    ctx.invoke(
+        batch,
+        input_dir=data_dir,
+        output=data_dir,
+        output_format=output_format,
+        input_format="auto",
+        force=force,
+    )
+
+
 def main() -> None:
     """Entry point for the CLI."""
     cli(obj={})
