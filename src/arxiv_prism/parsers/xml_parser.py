@@ -12,19 +12,26 @@ from arxiv_prism.models import (
 )
 from arxiv_prism.models import Supplementary  # noqa: F401 - used in return type
 from arxiv_prism.parsers.base import BaseParser
-from arxiv_prism.text_utils import strip_citations
+from arxiv_prism.text_utils import strip_citations, link_to_markdown
 from arxiv_prism.math_utils import mathml_element_to_latex
 
 logger = logging.getLogger(__name__)
 
-NS = {"mml": "http://www.w3.org/1998/Math/MathML", "xlink": "http://www.w3.org/1999/xlink"}
+NS = {
+    "mml": "http://www.w3.org/1998/Math/MathML",
+    "xlink": "http://www.w3.org/1999/xlink",
+    "dc": "http://purl.org/dc/elements/1.1/",
+    "prism": "http://prismstandard.org/namespaces/basic/2.0/",
+    "ce": "http://www.elsevier.com/xml/common/dtd",
+}
 
 
 def _text(el: ET.Element | None) -> str:
     """Recursive text of element and children."""
     if el is None:
         return ""
-    return " ".join(el.itertext()) if el.itertext else ""
+    # Use list() to ensure we can check if it's empty, or just join
+    return " ".join(el.itertext())
 
 
 def _norm(s: str) -> str:
@@ -36,10 +43,17 @@ def _elem(root: ET.Element | None, path: str, ns: dict | None = None) -> ET.Elem
     """Find first child by tag path (no namespace)."""
     if root is None:
         return None
+    namespaces = ns or NS
     for tag in path.split("/"):
-        found = root.find(tag, ns or {})
+        # Try with namespace if tag has prefix
+        if ":" in tag:
+            prefix, local = tag.split(":", 1)
+            if prefix in namespaces:
+                tag = f"{{{namespaces[prefix]}}}{local}"
+        
+        found = root.find(tag, namespaces)
         if found is None:
-            found = root.find(f".//{tag}", ns or {})
+            found = root.find(f".//{tag}", namespaces)
         if found is not None:
             root = found
         else:
@@ -47,10 +61,15 @@ def _elem(root: ET.Element | None, path: str, ns: dict | None = None) -> ET.Elem
     return root
 
 
-def _elems(root: ET.Element | None, tag: str) -> list:
+def _elems(root: ET.Element | None, tag: str, ns: dict | None = None) -> list:
     """Find all descendants with tag."""
     if root is None:
         return []
+    namespaces = ns or NS
+    if ":" in tag:
+        prefix, local = tag.split(":", 1)
+        if prefix in namespaces:
+            tag = f"{{{namespaces[prefix]}}}{local}"
     return list(root.iter(tag))
 
 
@@ -67,17 +86,28 @@ def _extract_paragraph_text(p_el: ET.Element) -> str:
         
         # Process children
         for child in node:
-            if child.tag == "xref" and child.get("ref-type") == "bibr":
+            tag = child.tag
+            if isinstance(tag, str) and "}" in tag:
+                tag = tag.split("}", 1)[1]
+
+            if tag == "xref" and child.get("ref-type") == "bibr":
                 # Skip citation content but keep the tail text
                 if child.tail:
                     parts.append(child.tail)
-            elif child.tag == "ext-link":
-                href = child.get("{http://www.w3.org/1999/xlink}href") or child.get("xlink:href") or ""
+            elif tag in ("inline-formula", "disp-formula"):
+                # Convert math to LaTeX within paragraphs
+                parts.append(_formula_to_latex(child, display=(tag == "disp-formula")))
+                if child.tail:
+                    parts.append(child.tail)
+            elif tag in ("ext-link", "link"):
+                href = child.get("{http://www.w3.org/1999/xlink}href") or child.get("xlink:href") or child.get("href") or ""
                 text = _norm(_text(child))
-                if href and not href.startswith("#"):
-                    parts.append(f"[{text or href}]({href})")
-                else:
-                    parts.append(text)
+                parts.append(link_to_markdown(href, text))
+                if child.tail:
+                    parts.append(child.tail)
+            elif tag == "italic" or tag == "bold":
+                # Handle basic formatting if needed, but for now just text
+                parts.append(_process_node(child))
                 if child.tail:
                     parts.append(child.tail)
             else:
@@ -103,31 +133,36 @@ def _formula_to_latex(formula_el: ET.Element, display: bool) -> str:
     latex = mathml_element_to_latex(math_el)
     if not latex:
         return ""
-    return f"$${latex}$$" if display else f"${latex}$"
+    # Add spaces around delimiters for better markdown rendering and to prevent text bleeding
+    return f" $${latex}$$ " if display else f" ${latex}$ "
 
 
 def _parse_sec(sec_el: ET.Element, level: int) -> Section:
     """Recursively parse a sec element into Section."""
-    title_el = sec_el.find("title")
+    title_el = sec_el.find("title") or sec_el.find("{http://www.elsevier.com/xml/common/dtd}section-title")
     title = _norm(_text(title_el)) if title_el is not None else ""
     content_parts: list[str] = []
     sections: list[Section] = []
     for child in sec_el:
-        if child.tag == "title":
+        tag = child.tag
+        if isinstance(tag, str) and "}" in tag:
+            tag = tag.split("}", 1)[1]
+
+        if tag in ("title", "section-title"):
             continue
-        if child.tag == "sec":
+        if tag in ("sec", "sections"):
             disp = child.get("disp-level")
             sub_level = int(disp) if disp and disp.isdigit() else level + 1
             sections.append(_parse_sec(child, sub_level))
-        elif child.tag == "p":
+        elif tag in ("p", "para"):
             content_parts.append(_extract_paragraph_text(child))
-        elif child.tag == "fig":
+        elif tag == "fig":
             pass  # Figures collected separately
-        elif child.tag == "table-wrap":
+        elif tag == "table-wrap":
             pass  # Tables collected separately
-        elif child.tag == "disp-formula":
+        elif tag == "disp-formula":
             content_parts.append(_formula_to_latex(child, display=True))
-        elif child.tag == "inline-formula":
+        elif tag == "inline-formula":
             content_parts.append(_formula_to_latex(child, display=False))
     content = "\n\n".join(p for p in content_parts if p.strip())
     return Section(title=title, level=level, content=content, sections=sections)
@@ -139,12 +174,18 @@ class XMLParser(BaseParser):
     def parse(self, content: str) -> Article:
         """Parse XML content into an Article."""
         root = ET.fromstring(content)
+        
+        # Determine format
+        if "elsevier.com" in content:
+            return self._parse_elsevier(root)
+        
         article = root.find("article")
         if article is None:
             # Wrapped formats (e.g. Springer Nature <response><records><article>)
             article = root.find(".//article")
         if article is None:
             article = root
+        
         front = article.find("front")
         article_meta = front.find("article-meta") if front is not None else None
         body = article.find("body")
@@ -177,6 +218,61 @@ class XMLParser(BaseParser):
             supplementary=supplementary,
         )
 
+    def _parse_elsevier(self, root: ET.Element) -> Article:
+        coredata = root.find(".//coredata", NS)
+        original_text = root.find(".//originalText", NS)
+        
+        title = _norm(_text(_elem(coredata, "dc:title")))
+        doi = _norm(_text(_elem(coredata, "prism:doi")))
+        
+        abstract_parts = []
+        for abs_el in _elems(coredata, "dc:description"):
+            abstract_parts.append(_extract_paragraph_text(abs_el))
+        abstract = "\n\n".join(p for p in abstract_parts if p.strip())
+        
+        sections = []
+        if original_text is not None:
+            for sec in _elems(original_text, "ce:sections"):
+                sections.append(_parse_sec(sec, 1))
+        
+        figures = []
+        for fig in _elems(root, "ce:figure"):
+            fid = fig.get("id") or f"F{len(figures)+1}"
+            label = _norm(_text(fig.find("{http://www.elsevier.com/xml/common/dtd}label")))
+            caption_el = fig.find("{http://www.elsevier.com/xml/common/dtd}caption")
+            cap_parts = []
+            if caption_el is not None:
+                for p in caption_el.findall("{http://www.elsevier.com/xml/common/dtd}simple-para"):
+                    cap_parts.append(_extract_paragraph_text(p))
+            caption = "\n\n".join(cap_parts)
+            figures.append(Figure(id=fid, label=label, caption=caption))
+            
+        tables = []
+        # Elsevier tables are complex, but let's try to get simple ones
+        for wrap in _elems(root, "ce:table"):
+            tid = wrap.get("id") or f"T{len(tables)+1}"
+            label = _norm(_text(wrap.find("{http://www.elsevier.com/xml/common/dtd}label")))
+            cap_el = wrap.find("{http://www.elsevier.com/xml/common/dtd}caption")
+            cap_parts = []
+            if cap_el is not None:
+                for p in cap_el.findall("{http://www.elsevier.com/xml/common/dtd}simple-para"):
+                    cap_parts.append(_extract_paragraph_text(p))
+            caption = "\n\n".join(cap_parts)
+            
+            rows = []
+            # Elsevier uses CALS or other table models, might be hard to parse simply
+            # For now, just placeholder or basic parse if possible
+            tables.append(Table(id=tid, label=label, caption=caption, data=rows))
+            
+        return Article(
+            title=title,
+            doi=doi,
+            abstract=abstract,
+            sections=sections,
+            figures=figures,
+            tables=tables,
+        )
+
     def _get_abstract(self, article_meta: ET.Element | None) -> str:
         if article_meta is None:
             return ""
@@ -184,13 +280,13 @@ class XMLParser(BaseParser):
         if abstract_el is None:
             return ""
         parts = []
-        for p in abstract_el.findall("p"):
+        for p in abstract_el.findall("p") + abstract_el.findall("para"):
             parts.append(_extract_paragraph_text(p))
         return "\n\n".join(p for p in parts if p.strip())
 
     def _get_sections(self, body: ET.Element) -> list[Section]:
         sections: list[Section] = []
-        for sec in body.findall("sec"):
+        for sec in body.findall("sec") + body.findall("sections"):
             disp = sec.get("disp-level")
             level = int(disp) if disp and disp.isdigit() else 1
             if level == 1:

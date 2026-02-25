@@ -14,6 +14,10 @@ def strip_citations(text: str) -> str:
     # Remove [...]. e.g. [1], [1, 2], [1-3]
     text = re.sub(r"\[\s*\d+(?:\s*[,\-]\s*\d+)*\s*\]", "", text)
     
+    # Remove author-year citations. e.g. (Smith et al., 2020), (Jones, 2019; Smith, 2020)
+    # This pattern matches (Author et al., Year) or (Author, Year)
+    text = re.sub(r"\(\s*[A-Z][a-z]+(?:\s+et\s+al\.)?,\s*\d{4}(?:\s*;\s*[A-Z][a-z]+(?:\s+et\s+al\.)?,\s*\d{4})*\s*\)", "", text)
+    
     # Remove empty citation artifacts - more comprehensive pattern
     # Patterns: (–), (, ), (,), ( ), etc., including leading/trailing spaces
     # This also catches cases where citations leave behind only punctuation

@@ -12,7 +12,7 @@ from arxiv_prism.models import (
 )
 from arxiv_prism.models import Supplementary  # noqa: F401 - used in return type
 from arxiv_prism.parsers.base import BaseParser
-from arxiv_prism.text_utils import strip_citations
+from arxiv_prism.text_utils import strip_citations, link_to_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -57,21 +57,31 @@ def _clean_content_text(soup, container) -> str:
         return ""
     # Remove citation refs: sup containing links to #ref-
     for sup in container.find_all("sup"):
+        # Check for reference links within sup
         ref_link = sup.find("a", href=re.compile(r"#ref-|#cite", re.I))
         if ref_link:
+            sup.decompose()
+        # Also check if the sup itself contains citation-like text (e.g., [1], 1,2)
+        elif re.match(r"^\[?\d+(?:,\s*\d+)*\]?$", sup.get_text(strip=True)):
             sup.decompose()
     # Remove standalone citation links
     for a in container.find_all("a", href=re.compile(r"#ref-|#cite", re.I)):
         a.decompose()
+    # Handle MathML in HTML
+    for math in container.find_all("math"):
+        from arxiv_prism.math_utils import mathml_to_latex
+        latex = mathml_to_latex(str(math))
+        if latex:
+            # Determine if it's display or inline based on parent or attributes
+            display = math.get("display") == "block" or math.find_parent(["div", "p"], class_=re.compile("display|equation", re.I)) is not None
+            math.replace_with(f" $${latex}$$ " if display else f" ${latex}$ ")
+        else:
+            math.decompose()
     # Convert remaining links to [text](url)
     for a in container.find_all("a", href=True):
         href = a.get("href", "")
-        if href.startswith("#"):
-            # Internal anchor - keep text only
-            a.replace_with(a.get_text(strip=True))
-        else:
-            text = a.get_text(strip=True) or href
-            a.replace_with(f"[{text}]({href})")
+        text = a.get_text(strip=True)
+        a.replace_with(link_to_markdown(href, text))
     text = container.get_text(separator=" ", strip=True)
     text = re.sub(r"  +", " ", text)
     text = strip_citations(text)

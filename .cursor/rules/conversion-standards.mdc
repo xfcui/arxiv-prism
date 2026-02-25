@@ -1,0 +1,52 @@
+---
+description: Standards for converting articles from XML/HTML to Markdown/JSON
+globs: src/arxiv_prism/parsers/**/*.py, src/arxiv_prism/formatters/**/*.py
+alwaysApply: false
+---
+
+# Article Conversion Standards
+
+Guidelines for implementing parsers and formatters to ensure consistent article representation.
+
+## Core Principles
+
+- **Intermediate Representation**: Always parse into the `Article` model (`src/arxiv_prism/models.py`).
+- **Math Handling**: Convert all formulas (MathML/HTML) to LaTeX. Use `$` for inline and `$$` for display math. Ensure spaces are added around LaTeX delimiters to prevent text bleeding.
+- **Citation Stripping**: Remove citation markers (e.g., `[1]`, `(Smith et al., 2020)`) from paragraph text using `strip_citations` from `src/arxiv_prism/text_utils.py`. Handle artifacts like empty parentheses `()` or trailing commas left by removal.
+- **Hierarchy Preservation**: Maintain the original section nesting using the recursive `Section` model.
+
+## Parser Implementation (XML/HTML)
+
+- **Text Extraction**: Use recursive text extraction to capture content within nested tags while skipping or specially handling formatting tags.
+- **Clean Content**: Normalize whitespace and remove redundant newlines. Use `link_to_markdown` from `src/arxiv_prism/text_utils.py` for consistent link formatting.
+- **Links**: Convert external links to standard Markdown `[text](url)` format. Skip internal anchor links (starting with `#`).
+
+## Formatter Implementation (Markdown/JSON)
+
+- **Markdown**: Use ATX-style headers (`#`, `##`) based on the `Section.level`. Ensure a blank line exists before and after headers and formulas.
+- **JSON**: Ensure the output is a valid serialization of the `Article` model.
+
+## Examples
+
+### ✅ Correct Math Conversion
+```python
+# In XML parser
+latex = mathml_element_to_latex(math_el)
+# Add spaces around delimiters for better markdown rendering
+return f" ${latex}$ " if inline else f"\n\n$${latex}$$\n\n"
+```
+
+### ✅ Correct Link Formatting
+```python
+from arxiv_prism.text_utils import link_to_markdown
+# ...
+href = child.get("href")
+text = _text(child)
+parts.append(link_to_markdown(href, text))
+```
+
+### ❌ Incorrect Text Extraction
+```python
+# Avoid direct .text access if children contain important content
+content = element.text  # ❌ Misses text in <span> or <i> tags
+```
