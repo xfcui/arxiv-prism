@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 
 from arxiv_prism.models import (
     Article,
+    Author,
     Figure,
     Section,
     Table,
@@ -15,6 +16,40 @@ from arxiv_prism.parsers.base import BaseParser
 from arxiv_prism.text_utils import strip_citations, link_to_markdown
 
 logger = logging.getLogger(__name__)
+
+_MONTH_ABBR = {
+    "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+    "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+    "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec",
+    "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr",
+    "05": "May", "06": "Jun", "07": "Jul", "08": "Aug",
+    "09": "Sep",
+}
+
+
+def _normalize_pubdate(raw: str) -> str:
+    """Normalize a date string to 'YYYY Mon D' format matching NCBI output.
+
+    Handles ISO dates (2024-12-18), space-separated numeric (2024 12 18),
+    and already-abbreviated forms (2024 Dec 18).
+    """
+    raw = raw.strip()
+    # ISO format: 2024-12-18
+    if re.match(r"^\d{4}-\d{1,2}-\d{1,2}$", raw):
+        year, month, day = raw.split("-")
+        day = day.lstrip("0") or day
+        month = _MONTH_ABBR.get(month.lstrip("0"), month)
+        return f"{year} {month} {day}"
+    # Space-separated numeric: 2024 12 18 or 2024 12
+    parts = raw.split()
+    if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+        year = parts[0]
+        month = _MONTH_ABBR.get(parts[1].lstrip("0"), parts[1])
+        day = parts[2].lstrip("0") if len(parts) > 2 else ""
+        return " ".join(p for p in [year, month, day] if p)
+    # Already in acceptable form — return as-is
+    return raw
+
 
 # Section titles to skip (reference list, etc.)
 SKIP_SECTION_TITLES = {"References", "References "}
@@ -100,13 +135,50 @@ class HTMLParser(BaseParser):
             title = "Untitled"
         doi = self._get_doi(soup)
         abstract = self._get_abstract(soup)
+        
+        # Extract authors
+        authors = []
+        for author_el in soup.select(".c-article-author-list__item"):
+            name_el = author_el.select_one(".c-article-author-list__name")
+            if name_el:
+                # Nature/Springer often has given name then surname in HTML
+                # but we want to match the NCBI format (Surname Given) if possible
+                # or at least be consistent.
+                name = _element_text(name_el)
+                if name:
+                    # Try to convert "First Last" to "Last First" if it looks like a simple name
+                    # and doesn't already have a comma
+                    if "," not in name:
+                        parts = name.split()
+                        if len(parts) == 2:
+                            name = f"{parts[1]} {parts[0]}"
+                        elif len(parts) > 2:
+                            # For "First Middle Last", we'll take last and join the rest
+                            name = f"{parts[-1]} {' '.join(parts[:-1])}"
+                    else:
+                        # If it has a comma "Last, First", convert to "Last First"
+                        name = " ".join(p.strip() for p in name.split(","))
+                    authors.append(Author(name=name))
+        
+        # Extract pubdate — normalize to "YYYY Mon D" to match NCBI format
+        pubdate = None
+        pub_el = soup.select_one(".c-article-identifiers__item time")
+        if pub_el:
+            raw = pub_el.get("datetime") or _element_text(pub_el)
+            pubdate = _normalize_pubdate(raw) if raw else None
+
         sections = self._get_sections(soup)
         figures = self._get_figures(soup)
         tables = self._get_tables(soup)
         supplementary = self._get_supplementary(soup)
+        # Springer/Nature is a print journal: printpubdate == pubdate (matches NCBI pattern)
+        printpubdate = pubdate or ""
         return Article(
             title=title,
             doi=doi,
+            authors=authors,
+            pubdate=pubdate,
+            printpubdate=printpubdate,
             abstract=abstract,
             sections=sections,
             figures=figures,

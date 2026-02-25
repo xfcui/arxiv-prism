@@ -10,10 +10,11 @@ class JSONFormatter(BaseFormatter):
     """Format Article as JSON string."""
 
     def format(self, article: Article) -> str:
-        """Serialize article to JSON without indentation (figures excluded)."""
+        """Serialize article to JSON with indentation (figures excluded)."""
         data = article.model_dump(mode="json")
         data.pop("figures", None)
         return json.dumps(
             data,
+            indent=2,
             ensure_ascii=False,
         )

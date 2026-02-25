@@ -1,5 +1,6 @@
 """CLI for article format converter."""
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -11,6 +12,91 @@ from arxiv_prism.formatters import JSONFormatter, MarkdownFormatter
 from arxiv_prism.parsers import HTMLParser, XMLParser
 
 logger = logging.getLogger("converter")
+
+
+_SPRINGER_JOURNAL_MAP: dict[str, tuple[str, str]] = {
+    "Nature": ("Nature", "Nature"),
+    "Nature_Immunology": ("Nat Immunol", "Nature immunology"),
+    "Nature_Biotechnology": ("Nat Biotechnol", "Nature biotechnology"),
+    "Nature_Computational_Science": ("Nat Comput Sci", "Nature computational science"),
+    "Nature_Machine_Intelligence": ("Nat Mach Intell", "Nature machine intelligence"),
+}
+
+_ELSEVIER_JOURNAL_MAP: dict[str, tuple[str, str]] = {
+    "Cell": ("Cell", "Cell"),
+    "Cell_Immunity": ("Immunity", "Immunity"),
+}
+
+_MONTH_TO_NUM: dict[str, str] = {
+    "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+    "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
+    "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12",
+}
+
+
+def _pubdate_to_sortdate(pubdate: str) -> str:
+    """Convert 'YYYY Mon D' pubdate to 'YYYY/MM/DD 00:00' sortdate matching NCBI format."""
+    parts = pubdate.strip().split()
+    if len(parts) < 2:
+        return ""
+    year = parts[0]
+    month = _MONTH_TO_NUM.get(parts[1], "00")
+    day = parts[2].zfill(2) if len(parts) > 2 else "01"
+    return f"{year}/{month}/{day} 00:00"
+
+
+def _infer_journal(input_path: Path) -> tuple[str, str]:
+    """Infer source abbreviation and full journal name from the file path."""
+    journal_dir = input_path.parent.name
+    return (
+        _SPRINGER_JOURNAL_MAP.get(journal_dir)
+        or _ELSEVIER_JOURNAL_MAP.get(journal_dir)
+        or ("", "")
+    )
+
+
+def _save_meta_json(article, input_path: Path, force: bool) -> None:
+    """Save article metadata to *_meta.json if it doesn't exist or force is True."""
+    meta_path = input_path.parent / f"{input_path.stem}_meta.json"
+    if not force and meta_path.exists():
+        return
+
+    pubdate = article.pubdate or ""
+    source, fulljournalname = _infer_journal(input_path)
+
+    # Map Article model to the expected meta.json format
+    meta = {
+        "uid": article.pmcid.replace("PMC", "") if article.pmcid else "",
+        "pubdate": pubdate,
+        "epubdate": article.epubdate,
+        "printpubdate": article.printpubdate,
+        "source": source,
+        "authors": [
+            {"name": a.name, "authtype": a.authtype}
+            for a in article.authors
+        ],
+        "title": article.title,
+        "volume": article.volume,
+        "issue": article.issue,
+        "pages": article.pages,
+        "articleids": [],
+        "fulljournalname": fulljournalname,
+        "sortdate": _pubdate_to_sortdate(pubdate) if pubdate else "",
+        "pmclivedate": ""
+    }
+
+    # Match NCBI articleids order: pmid → pmcid → doi
+    if article.pmid:
+        meta["articleids"].append({"idtype": "pmid", "value": article.pmid})
+    if article.pmcid:
+        meta["articleids"].append({"idtype": "pmcid", "value": article.pmcid})
+    if article.doi:
+        meta["articleids"].append({"idtype": "doi", "value": article.doi})
+
+    try:
+        meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"Failed to write metadata for {input_path.name}: {e}")
 
 
 def _configure_logging(verbose: bool, quiet: bool) -> None:
@@ -101,7 +187,8 @@ def convert(
     force: bool,
 ) -> None:
     """Convert a single article file."""
-    if not force and output is not None and output.exists():
+    meta_path = input_file.parent / f"{input_file.stem}_meta.json"
+    if not force and output is not None and output.exists() and meta_path.exists():
         return
     
     fmt = input_format
@@ -116,6 +203,10 @@ def convert(
     try:
         content = input_file.read_text(encoding="utf-8", errors="replace")
         article = parser.parse(content)
+        
+        # Generate metadata file
+        _save_meta_json(article, input_file, force)
+        
         out_str = formatter.format(article)
         if output is not None:
             output.parent.mkdir(parents=True, exist_ok=True)
@@ -189,7 +280,9 @@ def batch(
     for path in iterator:
         rel = path.relative_to(input_dir)
         out_path = output / rel.with_suffix(ext)
-        if not force and out_path.exists():
+        meta_path = path.parent / f"{path.stem}_meta.json"
+        
+        if not force and out_path.exists() and meta_path.exists():
             skipped += 1
             continue
 
@@ -201,6 +294,10 @@ def batch(
             parser = _get_parser(fmt)
             content = path.read_text(encoding="utf-8", errors="replace")
             article = parser.parse(content)
+            
+            # Generate metadata file
+            _save_meta_json(article, path, force)
+            
             out_str = formatter.format(article)
             out_path.parent.mkdir(parents=True, exist_ok=True)
             out_path.write_text(out_str, encoding="utf-8")

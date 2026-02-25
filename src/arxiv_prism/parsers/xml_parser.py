@@ -6,6 +6,7 @@ from xml.etree import ElementTree as ET
 
 from arxiv_prism.models import (
     Article,
+    Author,
     Figure,
     Section,
     Table,
@@ -23,6 +24,7 @@ NS = {
     "dc": "http://purl.org/dc/elements/1.1/",
     "prism": "http://prismstandard.org/namespaces/basic/2.0/",
     "ce": "http://www.elsevier.com/xml/common/dtd",
+    "svapi": "http://www.elsevier.com/xml/svapi/article/dtd",
 }
 
 
@@ -71,6 +73,26 @@ def _elems(root: ET.Element | None, tag: str, ns: dict | None = None) -> list:
         if prefix in namespaces:
             tag = f"{{{namespaces[prefix]}}}{local}"
     return list(root.iter(tag))
+
+
+_MONTH_ABBR = {
+    "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+    "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+    "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec",
+    "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr",
+    "05": "May", "06": "Jun", "07": "Jul", "08": "Aug",
+    "09": "Sep",
+}
+
+
+def _format_pubdate(year: str, month: str, day: str) -> str:
+    """Format pubdate to 'YYYY Mon D' matching NCBI format."""
+    year = year.strip()
+    month = month.strip()
+    day = day.strip().lstrip("0") or day.strip()  # remove leading zero from day
+    month = _MONTH_ABBR.get(month, month)  # convert numeric month to abbreviation
+    parts = [p for p in [year, month, day] if p]
+    return " ".join(parts)
 
 
 def _extract_paragraph_text(p_el: ET.Element) -> str:
@@ -197,10 +219,105 @@ class XMLParser(BaseParser):
             title = "Untitled"
 
         doi = None
+        pmid = None
+        pmcid = None
         for aid in _elems(article_meta or article, "article-id"):
-            if aid.get("pub-id-type") == "doi" and aid.text:
+            id_type = aid.get("pub-id-type")
+            if id_type == "doi" and aid.text:
                 doi = aid.text.strip()
-                break
+            elif id_type == "pmid" and aid.text:
+                pmid = aid.text.strip()
+            elif id_type == "pmcid" and aid.text:
+                pmcid = aid.text.strip()
+
+        # Extract authors
+        authors = []
+        contrib_group = _elem(article_meta, "contrib-group")
+        if contrib_group is not None:
+            for contrib in _elems(contrib_group, "contrib"):
+                if contrib.get("contrib-type") == "author":
+                    name_el = contrib.find("name")
+                    if name_el is not None:
+                        surname = _text(name_el.find("surname"))
+                        given = _text(name_el.find("given-names"))
+                        # Match NCBI format: Surname Given (no comma)
+                        authors.append(Author(name=f"{surname} {given}".strip()))
+                    else:
+                        # Handle cases where name is directly in contrib or string-name
+                        string_name = contrib.find("string-name")
+                        if string_name is not None:
+                            name = _norm(_text(string_name))
+                            # Try to convert "First Last" to "Last First" if it looks like it
+                            # and doesn't already have a comma
+                            if "," not in name:
+                                parts = name.split()
+                                if len(parts) == 2:
+                                    name = f"{parts[1]} {parts[0]}"
+                                elif len(parts) > 2:
+                                    name = f"{parts[-1]} {' '.join(parts[:-1])}"
+                            else:
+                                # If it has a comma "Last, First", convert to "Last First"
+                                name = " ".join(p.strip() for p in name.split(","))
+                            authors.append(Author(name=name))
+
+        # Extract pub-dates by type to match NCBI field mapping:
+        #   collection → pubdate + printpubdate (journal issue date)
+        #   pub/electronic → epubdate (online-first date)
+        #   pub/print → pubdate + printpubdate (for print journals like Springer Nature)
+        collection_date = epub_date = print_date = fallback_date = None
+        for pub_date_el in _elems(article_meta or article, "pub-date"):
+            year = _text(pub_date_el.find("year"))
+            month = _text(pub_date_el.find("month"))
+            day = _text(pub_date_el.find("day"))
+            if not year:
+                continue
+            date_str = _format_pubdate(year, month, day)
+            pub_type = pub_date_el.get("date-type") or pub_date_el.get("pub-type") or ""
+            pub_fmt = pub_date_el.get("publication-format") or ""
+            if pub_type == "collection":
+                collection_date = date_str
+            elif "electronic" in pub_fmt or "epub" in pub_type or "electronic" in pub_type:
+                epub_date = date_str
+            elif "print" in pub_fmt or "ppub" in pub_type:
+                print_date = date_str
+            else:
+                fallback_date = date_str
+
+        # Resolve final dates matching NCBI pattern
+        epubdate = epub_date or ""
+        # Only use collection_date when it has at least year+month; year-only is too imprecise
+        if collection_date and len(collection_date.split()) > 1:
+            # Online journal with volume/issue collection date (e.g. NCBI Sci_Adv, Genome_Biol)
+            pubdate = collection_date
+            printpubdate = collection_date
+        elif print_date:
+            # Print+online journal (e.g. Springer Nature)
+            pubdate = print_date
+            printpubdate = print_date
+        elif epub_date:
+            # Online-only journal (e.g. NCBI Nat_Commun)
+            pubdate = epub_date
+            printpubdate = ""
+        else:
+            pubdate = fallback_date
+            printpubdate = fallback_date or ""
+
+        # Extract volume, issue, pages from article-meta
+        meta_el = article_meta or article
+        volume = _norm(_text(_elem(meta_el, "volume")))
+        issue = _norm(_text(_elem(meta_el, "issue")))
+        fpage = _norm(_text(_elem(meta_el, "fpage")))
+        lpage = _norm(_text(_elem(meta_el, "lpage")))
+        eloc = _norm(_text(_elem(meta_el, "elocation-id")))
+        # For print journals use page range; for online-only use elocation-id
+        if print_date and fpage:
+            pages = f"{fpage}-{lpage}" if lpage and lpage != fpage else fpage
+        elif eloc:
+            pages = eloc
+        elif fpage:
+            pages = f"{fpage}-{lpage}" if lpage and lpage != fpage else fpage
+        else:
+            pages = ""
 
         abstract = self._get_abstract(article_meta)
         sections = self._get_sections(body) if body is not None else []
@@ -211,20 +328,54 @@ class XMLParser(BaseParser):
         return Article(
             title=title,
             doi=doi,
+            pmid=pmid,
+            pmcid=pmcid,
+            pubdate=pubdate,
+            epubdate=epubdate,
+            printpubdate=printpubdate,
+            authors=authors,
             abstract=abstract,
             sections=sections,
             figures=figures,
             tables=tables,
             supplementary=supplementary,
+            volume=volume,
+            issue=issue,
+            pages=pages,
         )
 
     def _parse_elsevier(self, root: ET.Element) -> Article:
-        coredata = root.find(".//coredata", NS)
-        original_text = root.find(".//originalText", NS)
-        
+        svapi = NS["svapi"]
+        coredata = root.find(f"{{{svapi}}}coredata")
+        original_text = root.find(f"{{{svapi}}}originalText")
+
         title = _norm(_text(_elem(coredata, "dc:title")))
         doi = _norm(_text(_elem(coredata, "prism:doi")))
-        
+        pmid_el = root.find(f"{{{svapi}}}pubmed-id")
+        pmid = _norm(pmid_el.text) if pmid_el is not None and pmid_el.text else ""
+
+        authors = []
+        for creator in _elems(coredata, "dc:creator"):
+            name = _norm(creator.text or "")
+            if "," in name:
+                # Normalize "Surname, Given" → "Surname Given" to match NCBI format
+                parts = [p.strip() for p in name.split(",", 1)]
+                name = " ".join(p for p in parts if p)
+            if name:
+                authors.append(Author(name=name))
+
+        # Normalize coverDate from ISO "2022-05-10" to "YYYY Mon D" matching NCBI format
+        cover_date_raw = _norm(_text(_elem(coredata, "prism:coverDate")))
+        if cover_date_raw and re.match(r"^\d{4}-\d{1,2}-\d{1,2}$", cover_date_raw):
+            year, month, day = cover_date_raw.split("-")
+            pubdate = _format_pubdate(year, month, day)
+        else:
+            pubdate = cover_date_raw or None
+
+        volume = _norm(_text(_elem(coredata, "prism:volume")))
+        issue = _norm(_text(_elem(coredata, "prism:issueIdentifier")))
+        pages = _norm(_text(_elem(coredata, "prism:pageRange")))
+
         abstract_parts = []
         for abs_el in _elems(coredata, "dc:description"):
             abstract_parts.append(_extract_paragraph_text(abs_el))
@@ -264,13 +415,24 @@ class XMLParser(BaseParser):
             # For now, just placeholder or basic parse if possible
             tables.append(Table(id=tid, label=label, caption=caption, data=rows))
             
+        # prism:coverDate is the print cover date; set printpubdate to match NCBI
+        # pattern for print journals (pubdate == printpubdate, epubdate == "")
+        printpubdate = pubdate or ""
+
         return Article(
             title=title,
             doi=doi,
+            pmid=pmid,
+            pubdate=pubdate,
+            printpubdate=printpubdate,
+            authors=authors,
             abstract=abstract,
             sections=sections,
             figures=figures,
             tables=tables,
+            volume=volume,
+            issue=issue,
+            pages=pages,
         )
 
     def _get_abstract(self, article_meta: ET.Element | None) -> str:

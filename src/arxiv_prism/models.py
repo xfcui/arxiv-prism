@@ -3,6 +3,13 @@
 from pydantic import BaseModel, Field
 
 
+class Author(BaseModel):
+    """Author metadata."""
+
+    name: str
+    authtype: str = "Author"
+
+
 class Section(BaseModel):
     """Recursive section (section, subsection, subsubsection)."""
 
@@ -46,6 +53,15 @@ class Article(BaseModel):
 
     title: str
     doi: str | None = None
+    pmid: str | None = None
+    pmcid: str | None = None
+    pubdate: str | None = None
+    epubdate: str = ""
+    printpubdate: str = ""
+    authors: list[Author] = Field(default_factory=list)
+    volume: str = ""
+    issue: str = ""
+    pages: str = ""
 
     abstract: str = ""
     sections: list[Section] = Field(default_factory=list)
