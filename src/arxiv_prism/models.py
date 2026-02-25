@@ -7,7 +7,7 @@ class Section(BaseModel):
     """Recursive section (section, subsection, subsubsection)."""
 
     title: str
-    level: int = Field(ge=1, le=6, description="1=section, 2=subsection, ... 6=deepest")
+    level: int = Field(ge=1, le=10, description="1=section, 2=subsection, ... 10=deepest")
     content: str = ""
     sections: list["Section"] = Field(default_factory=list)
 
